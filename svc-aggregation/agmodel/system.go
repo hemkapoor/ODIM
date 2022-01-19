@@ -1139,7 +1139,7 @@ func DeleteMetricRequest(key string) *errors.Error {
 }
 
 func UpdateManagerData(key string, updateData map[string]interface{}, table string) error {
-
+	log.Info("Update MAnager Data...")
 	conn, err := common.GetDBConnection(common.InMemory)
 	if err != nil {
 		return fmt.Errorf("unable to connect DB: %v", err)
@@ -1162,7 +1162,7 @@ func GetManagerByURL(url string) (string, *errors.Error) {
 	}
 	managerData, err := conn.Read("Managers", url)
 	if err != nil {
-		return "", errors.PackError(err.ErrNo(), "unable to get managers details: ", err.Error())
+		return "", errors.PackError(err.ErrNo(), "unable to get managers details (Unmarshal error): ", err.Error())
 	}
 	if errs := json.Unmarshal([]byte(managerData), &manager); errs != nil {
 		return "", errors.PackError(errors.UndefinedErrorType, errs)

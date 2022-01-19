@@ -310,7 +310,7 @@ func (e *ExternalInterface) addCompute(taskID, targetURI, pluginID string, perce
 	if err = PushPluginStartUpData(plugin, pluginStartUpData); err != nil {
 		log.Error(err.Error())
 	}
-
+	log.Info("Value for Manager URI:", plugin.ManagerURI)
 	//systemID := agmodel.OdataID{OdataID: "/redfish/v1/Systems/" + aggregationSourceID}
 	//chassisID:= agmodel.OdataID{OdataID: "/redfish/v1/Chassis/" + aggregationSourceID}
 	//managerURI := "/redfish/v1/Manageres/" + plugin.ManagerUUID

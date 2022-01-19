@@ -209,6 +209,7 @@ func (e *ExternalInterface) addPluginData(req AddResourceRequest, taskID, target
 	}
 	plugin.ManagerURI = managersList[0]
 	// saving the pluginData
+	log.Info("plugin.ManagerURI.... data", plugin.ManagerURI)
 	dbErr := agmodel.SavePluginData(plugin)
 	if dbErr != nil {
 		errMsg := "error: while saving the plugin data: " + dbErr.Error()
