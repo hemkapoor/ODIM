@@ -17,9 +17,10 @@ package system
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/ODIM-Project/ODIM/lib-utilities/common"
 	"github.com/ODIM-Project/ODIM/lib-utilities/config"
@@ -198,19 +199,21 @@ func (e *ExternalInterface) addPluginData(req AddResourceRequest, taskID, target
 	// store encrypted password
 	plugin.Password = ciphertext
 	plugin.ManagerUUID = managerUUID
-	// saving the pluginData
-	dbErr := agmodel.SavePluginData(plugin)
-	if dbErr != nil {
-		errMsg := "error: while saving the plugin data: " + dbErr.Error()
-		log.Error(errMsg)
-		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo), "", nil
-	}
+
 	resp.Header = map[string]string{
 		"Location": listMembers[0].OdataID,
 	}
 	var managersList = make([]string, 0)
 	for i := 0; i < len(listMembers); i++ {
 		managersList = append(managersList, listMembers[i].OdataID)
+	}
+	plugin.ManagerURI = managersList[0]
+	// saving the pluginData
+	dbErr := agmodel.SavePluginData(plugin)
+	if dbErr != nil {
+		errMsg := "error: while saving the plugin data: " + dbErr.Error()
+		log.Error(errMsg)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo), "", nil
 	}
 	e.PublishEvent(managersList, "ManagerCollection")
 	resp.StatusCode = http.StatusCreated

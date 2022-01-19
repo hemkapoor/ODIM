@@ -17,9 +17,10 @@ package system
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	dmtf "github.com/ODIM-Project/ODIM/lib-dmtf/model"
 	"github.com/ODIM-Project/ODIM/lib-utilities/common"
@@ -333,6 +334,25 @@ func (e *ExternalInterface) deleteCompute(key string, index int) response.RPC {
 	resp.Body = args.CreateGenericErrorResponse()
 	return resp
 }
+
+/*func deleteLinkDetails(plugin agmodel.Plugin) error {
+	data, jerr := agmodel.GetManagerByURL(plugin.ManagerURI)
+	if jerr != nil {
+		errorMessage := "error unmarshalling manager details: " + jerr.Error()
+		log.Error(errorMessage)
+		return jerr
+	}
+
+	var managerData map[string]interface{}
+
+	err := json.Unmarshal([]byte(data), &managerData)
+	if err != nil {
+		errorMessage := "error unmarshalling manager details: " + err.Error()
+		log.Error(errorMessage)
+		return err
+	}
+	return nil
+}*/
 
 // deleteWildCardValues will delete the wild card values and
 // if all the servers are deleted, then it will delete the telemetry information

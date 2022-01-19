@@ -18,9 +18,10 @@ package managers
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	dmtf "github.com/ODIM-Project/ODIM/lib-dmtf/model"
 	"github.com/ODIM-Project/ODIM/lib-utilities/common"
@@ -187,6 +188,7 @@ func (e *ExternalInterface) getManagerDetails(id string) (mgrmodel.Manager, erro
 		Status: &mgrmodel.Status{
 			State: mgrData.State,
 		},
+		Links: mgrData.Links,
 	}, nil
 }
 

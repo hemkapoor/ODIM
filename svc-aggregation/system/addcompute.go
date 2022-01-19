@@ -311,5 +311,56 @@ func (e *ExternalInterface) addCompute(taskID, targetURI, pluginID string, perce
 		log.Error(err.Error())
 	}
 
+	//systemID := agmodel.OdataID{OdataID: "/redfish/v1/Systems/" + aggregationSourceID}
+	//chassisID:= agmodel.OdataID{OdataID: "/redfish/v1/Chassis/" + aggregationSourceID}
+	//managerURI := "/redfish/v1/Manageres/" + plugin.ManagerUUID
+	data, jerr := agmodel.GetManagerByURL(plugin.ManagerURI)
+	if jerr != nil {
+		errorMessage := "error unmarshalling manager details: " + jerr.Error()
+		log.Error(errorMessage)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
+			nil, nil), "", nil
+	}
+
+	var managerData map[string]interface{}
+	chassis := make(map[string]interface{})
+	server := make(map[string]interface{})
+	err = json.Unmarshal([]byte(data), &managerData)
+	if err != nil {
+		errorMessage := "error unmarshalling manager details: " + err.Error()
+		log.Error(errorMessage)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
+			nil, nil), "", nil
+	}
+	links := managerData["Links"].(map[string]interface{})
+	var chassisLink, serverLink []interface{}
+	if managerData["Links"].(map[string]interface{})["ManagerForChassis"] != nil {
+		chassisLink = links["ManagerForChassis"].([]interface{})
+		chassis["@odata.id"] = "/redfish/v1/Chassis/" + aggregationSourceID
+		chassisLink = append(chassisLink, chassis)
+	} else {
+		chassis["@odata.id"] = "/redfish/v1/Chassis/" + aggregationSourceID
+		chassisLink = append(chassisLink, chassis)
+	}
+	managerData["Links"].(map[string]interface{})["ManagerForChassis"] = chassisLink
+
+	if managerData["Links"].(map[string]interface{})["ManagerForServers"] != nil {
+		serverLink = links["ManagerForServers"].([]interface{})
+		server["@odata.id"] = "/redfish/v1/Systems/" + aggregationSourceID
+		serverLink = append(serverLink, server)
+	} else {
+		server["@odata.id"] = "/redfish/v1/Systems/" + aggregationSourceID
+		serverLink = append(serverLink, server)
+	}
+	managerData["Links"].(map[string]interface{})["ManagerForServers"] = serverLink
+
+	err = agmodel.UpdateManagerData(plugin.ManagerURI, managerData, "Managers")
+	if err != nil {
+		errorMessage := "error while saving manager details: " + err.Error()
+		log.Error(errorMessage)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
+			nil, nil), "", nil
+	}
+
 	return resp, aggregationSourceID, ciphertext
 }

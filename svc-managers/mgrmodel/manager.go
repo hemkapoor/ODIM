@@ -113,12 +113,13 @@ type Target struct {
 
 // RAManager struct is to store odimra details into DB
 type RAManager struct {
-	ID              string `json:"ManagerID"`
-	Name            string `json:"Name"`
-	ManagerType     string `json:"ManagerType"`
-	FirmwareVersion string `json:"FirmwareVersion"`
-	UUID            string `json:"UUID"`
-	State           string `json:"State"`
+	ID              string      `json:"ManagerID"`
+	Name            string      `json:"Name"`
+	ManagerType     string      `json:"ManagerType"`
+	FirmwareVersion string      `json:"FirmwareVersion"`
+	UUID            string      `json:"UUID"`
+	State           string      `json:"State"`
+	Links           *dmtf.Links `json:"Links,omitempty"`
 }
 
 // VirtualMediaInsert struct is to store the insert virtual media request payload
