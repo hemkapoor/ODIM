@@ -310,11 +310,12 @@ func (e *ExternalInterface) addCompute(taskID, targetURI, pluginID string, perce
 	if err = PushPluginStartUpData(plugin, pluginStartUpData); err != nil {
 		log.Error(err.Error())
 	}
-	log.Info("Value for Manager URI:", plugin.ManagerURI)
+	managerURI := "/redfish/v1/Manageres/" + plugin.ManagerUUID
+	log.Info("Value for Manager URI:", managerURI)
 	//systemID := agmodel.OdataID{OdataID: "/redfish/v1/Systems/" + aggregationSourceID}
 	//chassisID:= agmodel.OdataID{OdataID: "/redfish/v1/Chassis/" + aggregationSourceID}
-	//managerURI := "/redfish/v1/Manageres/" + plugin.ManagerUUID
-	data, jerr := agmodel.GetManagerByURL(plugin.ManagerURI)
+
+	data, jerr := agmodel.GetManagerByURL(managerURI)
 	if jerr != nil {
 		errorMessage := "error unmarshalling manager details: " + jerr.Error()
 		log.Error(errorMessage)
@@ -354,7 +355,7 @@ func (e *ExternalInterface) addCompute(taskID, targetURI, pluginID string, perce
 	}
 	managerData["Links"].(map[string]interface{})["ManagerForServers"] = serverLink
 
-	err = agmodel.UpdateManagerData(plugin.ManagerURI, managerData, "Managers")
+	err = agmodel.UpdateManagerData(managerURI, managerData, "Managers")
 	if err != nil {
 		errorMessage := "error while saving manager details: " + err.Error()
 		log.Error(errorMessage)

@@ -55,7 +55,6 @@ type Plugin struct {
 	PluginType        string
 	PreferredAuthType string
 	ManagerUUID       string
-	ManagerURI        string
 }
 
 //Target is for sending the requst to south bound/plugin
