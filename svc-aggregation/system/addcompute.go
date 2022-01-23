@@ -312,8 +312,6 @@ func (e *ExternalInterface) addCompute(taskID, targetURI, pluginID string, perce
 	}
 	managerURI := "/redfish/v1/Managers/" + plugin.ManagerUUID
 	log.Info("Value for Manager URI:", managerURI)
-	//systemID := agmodel.OdataID{OdataID: "/redfish/v1/Systems/" + aggregationSourceID}
-	//chassisID:= agmodel.OdataID{OdataID: "/redfish/v1/Chassis/" + aggregationSourceID}
 
 	data, jerr := agmodel.GetManagerByURL(managerURI)
 	if jerr != nil {
@@ -326,6 +324,7 @@ func (e *ExternalInterface) addCompute(taskID, targetURI, pluginID string, perce
 	var managerData map[string]interface{}
 	chassis := make(map[string]interface{})
 	server := make(map[string]interface{})
+	managerLinks := make(map[string]interface{})
 	var chassisLink, serverLink []interface{}
 	err = json.Unmarshal([]byte(data), &managerData)
 	if err != nil {
@@ -335,30 +334,26 @@ func (e *ExternalInterface) addCompute(taskID, targetURI, pluginID string, perce
 			nil, nil), "", nil
 	}
 
-	if managerData["Links"] != nil && managerData["Links"].(map[string]interface{})["ManagerForChassis"] != nil {
-		links := managerData["Links"].(map[string]interface{})
-		chassisLink = links["ManagerForChassis"].([]interface{})
-		chassis["@odata.id"] = "/redfish/v1/Chassis/" + aggregationSourceID
+	chassis["@odata.id"] = "/redfish/v1/Chassis/" + aggregationSourceID
+	server["@odata.id"] = "/redfish/v1/Systems/" + aggregationSourceID
+	if links, ok := managerData["Links"].(map[string]interface{}); ok {
+		if managerData["Links"].(map[string]interface{})["ManagerForChassis"] != nil {
+			chassisLink = links["ManagerForChassis"].([]interface{})
+		}
 		chassisLink = append(chassisLink, chassis)
-		_ = chassisLink
-	} else {
-		chassis["@odata.id"] = "/redfish/v1/Chassis/" + aggregationSourceID
-		managerData["Links"] = make(map[string]interface{})
-		links := managerData["Links"].(map[string]interface{})
-		links["ManagerForChassis"] = chassis
-	}
+		managerData["Links"].(map[string]interface{})["ManagerForChassis"] = chassisLink
 
-	if managerData["Links"] != nil && managerData["Links"].(map[string]interface{})["ManagerForServers"] != nil {
-		links := managerData["Links"].(map[string]interface{})
-		serverLink = links["ManagerForServers"].([]interface{})
-		server["@odata.id"] = "/redfish/v1/Systems/" + aggregationSourceID
+		if managerData["Links"].(map[string]interface{})["ManagerForServers"] != nil {
+			serverLink = links["ManagerForServers"].([]interface{})
+		}
 		serverLink = append(serverLink, server)
-		_ = serverLink
+		managerData["Links"].(map[string]interface{})["ManagerForServers"] = serverLink
 	} else {
-		server["@odata.id"] = "/redfish/v1/Systems/" + aggregationSourceID
-		managerData["Links"] = make(map[string]interface{})
-		links := managerData["Links"].(map[string]interface{})
-		links["ManagerForServers"] = server
+		chassisLink = append(chassisLink, chassis)
+		serverLink = append(serverLink, server)
+		managerLinks["ManagerForChassis"] = chassisLink
+		managerLinks["ManagerForServers"] = serverLink
+		managerData["Links"] = managerLinks
 	}
 
 	err = agmodel.UpdateManagerData(managerURI, managerData, "Managers")
