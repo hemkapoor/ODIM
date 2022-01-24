@@ -66,6 +66,7 @@ func (e *ExternalInterface) GetManagersCollection(req *managersproto.ManagerRequ
 // GetManagers will fetch individual manager details with the given ID
 func (e *ExternalInterface) GetManagers(req *managersproto.ManagerRequest) response.RPC {
 	var resp response.RPC
+	log.Info("ManagerID: ...", req.ManagerID)
 	if req.ManagerID == config.Data.RootServiceUUID {
 		manager, err := e.getManagerDetails(req.ManagerID)
 		if err != nil {
@@ -76,6 +77,7 @@ func (e *ExternalInterface) GetManagers(req *managersproto.ManagerRequest) respo
 				errArgs, nil)
 			return resp
 		}
+		log.Info("getting manager details....", manager)
 		resp.Body = manager
 	} else {
 
@@ -176,6 +178,7 @@ func (e *ExternalInterface) getManagerDetails(id string) (mgrmodel.Manager, erro
 	if err := json.Unmarshal([]byte(data), &mgrData); err != nil {
 		return mgr, fmt.Errorf("unable to marshal manager information: %v", err)
 	}
+	log.Info("Details for Manager ....", mgrData)
 	return mgrmodel.Manager{
 		OdataContext:    "/redfish/v1/$metadata#Manager.Manager",
 		OdataID:         "/redfish/v1/Managers/" + id,
