@@ -94,11 +94,11 @@ type GraphicalConsole struct {
 
 // Links to other Resources that are related to this Resource.
 type Links struct {
-	ActiveSoftwareImage OdataID   `json:"ActiveSoftwareImage"`
-	ManagerForChassis   []OdataID `json:"ManagerForChassis"`
-	ManagerForServers   []OdataID `json:"ManagerForServers"`
-	ManagerForSwitches  []OdataID `json:"ManagerForSwitches"`
-	ManagerInChassis    OdataID   `json:"ManagerInChassis"`
+	ActiveSoftwareImage OdataID     `json:"ActiveSoftwareImage"`
+	ManagerForChassis   []dmtf.Link `json:"ManagerForChassis"`
+	ManagerForServers   []dmtf.Link `json:"ManagerForServers"`
+	ManagerForSwitches  []dmtf.Link `json:"ManagerForSwitches"`
+	ManagerInChassis    OdataID     `json:"ManagerInChassis"`
 }
 
 // Actions struct for Actions to perform
