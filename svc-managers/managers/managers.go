@@ -188,7 +188,10 @@ func (e *ExternalInterface) getManagerDetails(id string) (mgrmodel.Manager, erro
 		Status: &mgrmodel.Status{
 			State: mgrData.State,
 		},
-		Links: mgrData.Links,
+		Links: &mgrmodel.Links{
+			ManagerForChassis: mgrData.Links.ManagerForChassis,
+			ManagerForServers: mgrData.Links.ManagerForServers,
+		},
 	}, nil
 }
 
