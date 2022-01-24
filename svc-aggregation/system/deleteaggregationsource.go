@@ -60,6 +60,7 @@ func (e *ExternalInterface) DeleteAggregationSource(req *aggregatorproto.Aggrega
 	requestData := strings.SplitN(req.URL, ".", 2)
 	resource := requestData[0]
 	uuid := resource[strings.LastIndexByte(resource, '/')+1:]
+	log.Info("UUID, for aggregation deletion", uuid)
 	target, terr := agmodel.GetTarget(uuid)
 	if terr != nil || target == nil {
 		cmVariants := getConnectionMethodVariants(connectionMethod.ConnectionMethodVariant)
@@ -75,6 +76,7 @@ func (e *ExternalInterface) DeleteAggregationSource(req *aggregatorproto.Aggrega
 			log.Error(errMsg)
 			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"plugin", cmVariants.PluginID}, nil)
 		}
+		log.Info("plugin UUID...", plugin.ManagerUUID)
 		// delete the manager
 		resp = e.deletePlugin("/redfish/v1/Managers/" + plugin.ManagerUUID)
 	} else {
@@ -88,6 +90,7 @@ func (e *ExternalInterface) DeleteAggregationSource(req *aggregatorproto.Aggrega
 			}
 			return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 		}
+		log.Info("Delete Manager ....system list ", systemList)
 		for _, systemURI := range systemList {
 			index := strings.LastIndexAny(systemURI, "/")
 			resp = e.deleteCompute(systemURI, index)
@@ -117,6 +120,7 @@ func (e *ExternalInterface) DeleteAggregationSource(req *aggregatorproto.Aggrega
 	}
 
 	// Delete the Aggregation Source
+	log.Info("DeleteAggregationSource.........")
 	dbErr = agmodel.DeleteAggregationSource(req.URL)
 	if dbErr != nil {
 		errorMessage := "error while trying to delete AggreationSource  " + dbErr.Error()
@@ -153,6 +157,7 @@ func removeAggregationSource(slice []agmodel.OdataID, element agmodel.OdataID) [
 
 // deleteplugin removes the given plugin
 func (e *ExternalInterface) deletePlugin(oid string) response.RPC {
+	log.Info("Delete Plugin ", oid)
 	var resp response.RPC
 	// Get Manager Info
 	data, derr := agmodel.GetResource("Managers", oid)
@@ -216,6 +221,7 @@ func (e *ExternalInterface) deletePlugin(oid string) response.RPC {
 	}
 
 	// deleting the manager info
+	log.Info("DeleteManagersData.......", oid)
 	dberr = agmodel.DeleteManagersData(oid)
 	if dberr != nil {
 		errMsg := derr.Error()
@@ -226,6 +232,7 @@ func (e *ExternalInterface) deletePlugin(oid string) response.RPC {
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 	// deleting the plugin if  zero devices are managed
+	log.Info("DeletePluginData....", pluginID)
 	dberr = agmodel.DeletePluginData(pluginID)
 	if dberr != nil {
 		errMsg := derr.Error()
