@@ -33,7 +33,7 @@ import (
 // DeleteAggregationSource is the handler for removing  bmc or manager
 func (e *ExternalInterface) DeleteAggregationSource(req *aggregatorproto.AggregatorRequest) response.RPC {
 	var resp response.RPC
-
+	log.Info("DeleteAggregationSource", req, "body..", req.RequestBody)
 	aggregationSource, dbErr := agmodel.GetAggregationSourceInfo(req.URL)
 	if dbErr != nil {
 		errorMessage := dbErr.Error()
@@ -81,6 +81,7 @@ func (e *ExternalInterface) DeleteAggregationSource(req *aggregatorproto.Aggrega
 		resp = e.deletePlugin("/redfish/v1/Managers/" + plugin.ManagerUUID)
 	} else {
 		var data = strings.Split(req.URL, "/redfish/v1/AggregationService/AggregationSources/")
+		log.Info("URL after split................", data, data[1])
 		systemList, dbErr := agmodel.GetAllMatchingDetails("ComputerSystem", data[1], common.InMemory)
 		if dbErr != nil {
 			errMsg := dbErr.Error()
