@@ -311,8 +311,13 @@ func (e *ExternalInterface) addCompute(taskID, targetURI, pluginID string, perce
 		log.Error(err.Error())
 	}
 	managerURI := "/redfish/v1/Managers/" + plugin.ManagerUUID
-	log.Info("Value for Manager URI:", managerURI)
+	var managerData map[string]interface{}
+	chassis := make(map[string]interface{})
+	server := make(map[string]interface{})
+	managerLinks := make(map[string]interface{})
+	var chassisLink, serverLink []interface{}
 
+	//Get Manager
 	data, jerr := agmodel.GetManagerByURL(managerURI)
 	if jerr != nil {
 		errorMessage := "error unmarshalling manager details: " + jerr.Error()
@@ -321,11 +326,6 @@ func (e *ExternalInterface) addCompute(taskID, targetURI, pluginID string, perce
 			nil, nil), "", nil
 	}
 
-	var managerData map[string]interface{}
-	chassis := make(map[string]interface{})
-	server := make(map[string]interface{})
-	managerLinks := make(map[string]interface{})
-	var chassisLink, serverLink []interface{}
 	err = json.Unmarshal([]byte(data), &managerData)
 	if err != nil {
 		errorMessage := "error unmarshalling manager details: " + err.Error()
