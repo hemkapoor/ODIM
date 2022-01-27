@@ -92,6 +92,19 @@ func (e *ExternalInterface) DeleteAggregationSource(req *aggregatorproto.Aggrega
 			return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 		}
 		log.Info("Delete Manager ....system list ", systemList)
+		/*		// Get the plugin
+				plugin, errs := agmodel.GetPluginData(target.PluginID)
+				if errs != nil {
+					errMsg := errs.Error()
+					log.Error(errMsg)
+					return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"plugin", target.PluginID}, nil)
+				}
+				deleteLinkErr := deleteLinkDetails(plugin.ManagerUUID)
+				if deleteLinkErr != nil {
+					errMsg := deleteLinkErr.Error()
+					log.Error(errMsg)
+					return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+				}*/
 		for _, systemURI := range systemList {
 			index := strings.LastIndexAny(systemURI, "/")
 			resp = e.deleteCompute(systemURI, index)
@@ -328,7 +341,7 @@ func (e *ExternalInterface) deleteCompute(key string, index int) response.RPC {
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 	e.deleteWildCardValues(key[index+1:])
-
+	fmt.Println("deletion chassis lisssttt........", chassisList)
 	for _, chassis := range chassisList {
 		e.EventNotification(chassis, "ResourceRemoved", "ChassisCollection")
 	}
@@ -343,21 +356,64 @@ func (e *ExternalInterface) deleteCompute(key string, index int) response.RPC {
 	return resp
 }
 
-/*func deleteLinkDetails(plugin agmodel.Plugin) error {
-	data, jerr := agmodel.GetManagerByURL(plugin.ManagerURI)
-	if jerr != nil {
-		errorMessage := "error unmarshalling manager details: " + jerr.Error()
-		log.Error(errorMessage)
-		return jerr
-	}
-
+/*func deleteLinkDetails(managerUUID string) error {
 	var managerData map[string]interface{}
-
-	err := json.Unmarshal([]byte(data), &managerData)
+	chassis := make(map[string]interface{})
+	server := make(map[string]interface{})
+	managerURI := "/redfish/v1/Managers/" + managerUUID
+	data, err := agmodel.GetResource("Managers", managerURI)
 	if err != nil {
 		errorMessage := "error unmarshalling manager details: " + err.Error()
 		log.Error(errorMessage)
 		return err
+	}
+
+	unmarshalErr := json.Unmarshal([]byte(data), &managerData)
+	if unmarshalErr != nil {
+		errorMessage := "error unmarshalling manager details: " + unmarshalErr.Error()
+		log.Error(errorMessage)
+		return unmarshalErr
+	}
+
+	if links, ok := managerData["Links"].(map[string]interface{}); ok {
+		if managerForChassis, ok := links["ManagerForChassis"].([]interface{}); ok {
+			for k, v := range managerForChassis {
+				if reflect.DeepEqual(v, chassis) {
+					fmt.Println(v.(map[string]interface{}))
+					managerForChassis = append(managerForChassis[:k], managerForChassis[k+1:]...)
+					if len(managerForChassis) != 0 {
+						links["ManagerForChassis"] = managerForChassis
+					} else {
+						delete(links, "ManagerForChassis")
+					}
+				}
+			}
+		}
+		if managerForServers, ok := links["ManagerForServers"].([]interface{}); ok {
+			for k, v := range managerForServers {
+				if reflect.DeepEqual(v, server) {
+					fmt.Println(v.(map[string]interface{}))
+					managerForServers = append(managerForServers[:k], managerForServers[k+1:]...)
+					if len(managerForServers) != 0 {
+						links["ManagerForServers"] = managerForServers
+					} else {
+						delete(links, "ManagerForServers")
+					}
+				}
+			}
+		}
+	}
+	mgrData, marshalErr := json.Marshal(managerData)
+	if err != nil {
+		errorMessage := "unable to marshal data for updating: " + marshalErr.Error()
+		log.Error(errorMessage)
+		return marshalErr
+	}
+	jerr := agmodel.GenericSave([]byte(mgrData), "Managers", managerURI)
+	if jerr != nil {
+		errorMessage := "error while saving manager details: " + jerr.Error()
+		log.Error(errorMessage)
+		return jerr
 	}
 	return nil
 }*/

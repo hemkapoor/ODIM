@@ -17,6 +17,7 @@ package system
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -310,6 +311,9 @@ func (e *ExternalInterface) addCompute(taskID, targetURI, pluginID string, perce
 	if err = PushPluginStartUpData(plugin, pluginStartUpData); err != nil {
 		log.Error(err.Error())
 	}
+	fmt.Println("System List.....", h.SystemURL)
+	fmt.Println("Manager List.....", managersList)
+	fmt.Println("chassis List......", chassisList)
 	managerURI := "/redfish/v1/Managers/" + plugin.ManagerUUID
 	var managerData map[string]interface{}
 	chassis := make(map[string]interface{})
@@ -318,7 +322,7 @@ func (e *ExternalInterface) addCompute(taskID, targetURI, pluginID string, perce
 	var chassisLink, serverLink []interface{}
 
 	//Get Manager
-	data, jerr := agmodel.GetManagerByURL(managerURI)
+	data, jerr := agmodel.GetResource("Managers", managerURI)
 	if jerr != nil {
 		errorMessage := "error unmarshalling manager details: " + jerr.Error()
 		log.Error(errorMessage)
@@ -355,8 +359,14 @@ func (e *ExternalInterface) addCompute(taskID, targetURI, pluginID string, perce
 		managerLinks["ManagerForServers"] = serverLink
 		managerData["Links"] = managerLinks
 	}
-
-	err = agmodel.UpdateManagerData(managerURI, managerData, "Managers")
+	mgrData, err := json.Marshal(managerData)
+	if err != nil {
+		errorMessage := "unable to marshal data for updating: " + err.Error()
+		log.Error(errorMessage)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
+			nil, nil), "", nil
+	}
+	err = agmodel.GenericSave([]byte(mgrData), "Managers", managerURI)
 	if err != nil {
 		errorMessage := "error while saving manager details: " + err.Error()
 		log.Error(errorMessage)

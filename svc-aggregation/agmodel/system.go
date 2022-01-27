@@ -1137,7 +1137,7 @@ func DeleteMetricRequest(key string) *errors.Error {
 	return nil
 }
 
-func UpdateManagerData(key string, updateData map[string]interface{}, table string) error {
+/*func UpdateManagerData(key string, updateData map[string]interface{}, table string) error {
 	log.Info("Update MAnager Data...")
 	conn, err := common.GetDBConnection(common.InMemory)
 	if err != nil {
@@ -1167,4 +1167,4 @@ func GetManagerByURL(url string) (string, *errors.Error) {
 		return "", errors.PackError(errors.UndefinedErrorType, errs)
 	}
 	return manager, nil
-}
+}*/
