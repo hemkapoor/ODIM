@@ -316,10 +316,10 @@ func (e *ExternalInterface) addCompute(taskID, targetURI, pluginID string, perce
 	fmt.Println("chassis List......", chassisList)
 	managerURI := "/redfish/v1/Managers/" + plugin.ManagerUUID
 	var managerData map[string]interface{}
-	chassis := make(map[string]interface{})
-	server := make(map[string]interface{})
+	chassis := make(map[int]map[string]interface{})
+	server := make(map[int]map[string]interface{})
 	managerLinks := make(map[string]interface{})
-	var chassisLink, serverLink []interface{}
+	var chassisLink, serverLink, listOfChassis, listOfServer []interface{}
 
 	//Get Manager
 	data, jerr := agmodel.GetResource("Managers", managerURI)
@@ -338,23 +338,33 @@ func (e *ExternalInterface) addCompute(taskID, targetURI, pluginID string, perce
 			nil, nil), "", nil
 	}
 
-	chassis["@odata.id"] = "/redfish/v1/Chassis/" + aggregationSourceID
-	server["@odata.id"] = "/redfish/v1/Systems/" + aggregationSourceID
+	//chassis["@odata.id"] = "/redfish/v1/Chassis/" + aggregationSourceID
+	//server["@odata.id"] = "/redfish/v1/Systems/" + aggregationSourceID
+	for index, val := range chassisList {
+		chassis[index] = make(map[string]interface{})
+		chassis[index]["@odata.id"] = val
+		listOfChassis = append(listOfChassis, chassis[index])
+	}
+	for index, val := range h.SystemURL {
+		server[index] = make(map[string]interface{})
+		server[index]["@odata.id"] = val
+		listOfServer = append(listOfServer, server[index])
+	}
 	if links, ok := managerData["Links"].(map[string]interface{}); ok {
 		if managerData["Links"].(map[string]interface{})["ManagerForChassis"] != nil {
 			chassisLink = links["ManagerForChassis"].([]interface{})
 		}
-		chassisLink = append(chassisLink, chassis)
+		chassisLink = append(chassisLink, listOfChassis...)
 		managerData["Links"].(map[string]interface{})["ManagerForChassis"] = chassisLink
 
 		if managerData["Links"].(map[string]interface{})["ManagerForServers"] != nil {
 			serverLink = links["ManagerForServers"].([]interface{})
 		}
-		serverLink = append(serverLink, server)
+		serverLink = append(serverLink, listOfServer...)
 		managerData["Links"].(map[string]interface{})["ManagerForServers"] = serverLink
 	} else {
-		chassisLink = append(chassisLink, chassis)
-		serverLink = append(serverLink, server)
+		chassisLink = append(chassisLink, listOfChassis...)
+		serverLink = append(serverLink, listOfServer...)
 		managerLinks["ManagerForChassis"] = chassisLink
 		managerLinks["ManagerForServers"] = serverLink
 		managerData["Links"] = managerLinks
