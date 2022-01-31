@@ -52,6 +52,17 @@ func (h *Create) Handle(req *chassisproto.CreateChassisRequest) response.RPC {
 	}
 	var managingMgrData map[string]string
 	log.Info("Manager UUUIIDDD....", managingManager)
+
+	if managingManager == "" {
+		return common.GeneralError(http.StatusBadRequest, response.ResourceNotFound, "", []interface{}{"Manager", mbc.Links.ManagedBy[0].Oid}, nil)
+	}
+
+	//todo: not sure why manager in redis is quoted
+	managingManager, e = strconv.Unquote(managingManager)
+	if e != nil {
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, e.Error(), nil, nil)
+	}
+
 	unmarshalErr := json.Unmarshal([]byte(managingManager), &managingMgrData)
 	if unmarshalErr != nil {
 		errorMessage := "error unmarshalling managing manager details: " + unmarshalErr.Error()
@@ -59,8 +70,8 @@ func (h *Create) Handle(req *chassisproto.CreateChassisRequest) response.RPC {
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
 			nil, nil)
 	}
-	log.Info("Managing mgr.....", managingMgrData["@odata.id"])
 	managerURI := managingMgrData["@odata.id"]
+	log.Info("Managing mgr.....", managerURI)
 	var managerData map[string]interface{}
 	data, jerr := smodel.GetResource("Managers", managerURI)
 	if jerr != nil {
@@ -78,16 +89,6 @@ func (h *Create) Handle(req *chassisproto.CreateChassisRequest) response.RPC {
 			nil, nil)
 	}
 	log.Info("Get resource.........", managerData)
-
-	if managingManager == "" {
-		return common.GeneralError(http.StatusBadRequest, response.ResourceNotFound, "", []interface{}{"Manager", mbc.Links.ManagedBy[0].Oid}, nil)
-	}
-
-	//todo: not sure why manager in redis is quoted
-	managingManager, e = strconv.Unquote(managingManager)
-	if e != nil {
-		return common.GeneralError(http.StatusInternalServerError, response.InternalError, e.Error(), nil, nil)
-	}
 
 	pluginManagingManager := new(nameCarrier)
 	e = json.Unmarshal([]byte(managingManager), pluginManagingManager)
