@@ -386,37 +386,6 @@ func (e *ExternalInterface) deleteCompute(key string, index int, pluginID string
 }
 
 func deleteLinkDetails(managerData map[string]interface{}, systemID string, chassisList []string) map[string]interface{} {
-	//var managerData map[string]interface{}
-	//chassis := make(map[string]interface{})
-	//server := make(map[string]interface{})
-	// if links, ok := managerData["Links"].(map[string]interface{}); ok {
-	// 	if managerForChassis, ok := links["ManagerForChassis"].([]interface{}); ok {
-	// 		for k, v := range managerForChassis {
-	// 			if reflect.DeepEqual(v, chassis) {
-	// 				fmt.Println(v.(map[string]interface{}))
-	// 				managerForChassis = append(managerForChassis[:k], managerForChassis[k+1:]...)
-	// 				if len(managerForChassis) != 0 {
-	// 					links["ManagerForChassis"] = managerForChassis
-	// 				} else {
-	// 					delete(links, "ManagerForChassis")
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// 	if managerForServers, ok := links["ManagerForServers"].([]interface{}); ok {
-	// 		for k, v := range managerForServers {
-	// 			if reflect.DeepEqual(v, server) {
-	// 				fmt.Println(v.(map[string]interface{}))
-	// 				managerForServers = append(managerForServers[:k], managerForServers[k+1:]...)
-	// 				if len(managerForServers) != 0 {
-	// 					links["ManagerForServers"] = managerForServers
-	// 				} else {
-	// 					delete(links, "ManagerForServers")
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
 	if links, ok := managerData["Links"].(map[string]interface{}); ok {
 		if managerForServers, ok := links["ManagerForServers"].([]interface{}); ok {
 			for k, v := range managerForServers {

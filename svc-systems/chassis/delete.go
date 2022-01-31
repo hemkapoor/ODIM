@@ -18,12 +18,14 @@ package chassis
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/ODIM-Project/ODIM/lib-utilities/common"
 	"github.com/ODIM-Project/ODIM/lib-utilities/errors"
 	chassisproto "github.com/ODIM-Project/ODIM/lib-utilities/proto/chassis"
 	"github.com/ODIM-Project/ODIM/lib-utilities/response"
 	"github.com/ODIM-Project/ODIM/svc-systems/plugin"
-	"net/http"
+	log "github.com/sirupsen/logrus"
 )
 
 func (d *Delete) Handle(req *chassisproto.DeleteChassisRequest) response.RPC {
@@ -31,12 +33,13 @@ func (d *Delete) Handle(req *chassisproto.DeleteChassisRequest) response.RPC {
 	if e == nil {
 		return common.GeneralError(http.StatusMethodNotAllowed, response.ActionNotSupported, "Managed Chassis cannot be deleted", []interface{}{"DELETE"}, nil)
 	}
-
+	log.Info("req.URL.......", req.URL)
 	if e.ErrNo() != errors.DBKeyNotFound {
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, e.Error(), nil, nil)
 	}
 
 	c, e := d.createPluginClient("URP*")
+	log.Info("delete server ......", c)
 	if e != nil && e.ErrNo() == errors.DBKeyNotFound {
 		return common.GeneralError(http.StatusMethodNotAllowed, response.ActionNotSupported, "", []interface{}{"DELETE"}, nil)
 	}

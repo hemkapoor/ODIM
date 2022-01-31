@@ -316,8 +316,8 @@ func (e *ExternalInterface) addCompute(taskID, targetURI, pluginID string, perce
 	fmt.Println("chassis List......", chassisList)
 	managerURI := "/redfish/v1/Managers/" + plugin.ManagerUUID
 	var managerData map[string]interface{}
-	chassis := make(map[int]map[string]interface{})
-	server := make(map[int]map[string]interface{})
+	//chassis := make(map[int]map[string]interface{})
+	//server := make(map[int]map[string]interface{})
 	managerLinks := make(map[string]interface{})
 	var chassisLink, serverLink, listOfChassis, listOfServer []interface{}
 
@@ -340,15 +340,22 @@ func (e *ExternalInterface) addCompute(taskID, targetURI, pluginID string, perce
 
 	//chassis["@odata.id"] = "/redfish/v1/Chassis/" + aggregationSourceID
 	//server["@odata.id"] = "/redfish/v1/Systems/" + aggregationSourceID
-	for index, val := range chassisList {
-		chassis[index] = make(map[string]interface{})
-		chassis[index]["@odata.id"] = val
-		listOfChassis = append(listOfChassis, chassis[index])
+	// for index, val := range chassisList {
+	// 	chassis[index] = make(map[string]interface{})
+	// 	chassis[index]["@odata.id"] = val
+	// 	listOfChassis = append(listOfChassis, chassis[index])
+	// }
+	// for index, val := range h.SystemURL {
+	// 	server[index] = make(map[string]interface{})
+	// 	server[index]["@odata.id"] = val
+	// 	listOfServer = append(listOfServer, server[index])
+	// }
+
+	for _, val := range chassisList {
+		listOfChassis = append(listOfChassis, map[string]string{"@odata.id": val})
 	}
-	for index, val := range h.SystemURL {
-		server[index] = make(map[string]interface{})
-		server[index]["@odata.id"] = val
-		listOfServer = append(listOfServer, server[index])
+	for _, val := range h.SystemURL {
+		listOfServer = append(listOfServer, map[string]string{"@odata.id": val})
 	}
 	if links, ok := managerData["Links"].(map[string]interface{}); ok {
 		if managerData["Links"].(map[string]interface{})["ManagerForChassis"] != nil {

@@ -26,6 +26,8 @@ import (
 	chassisproto "github.com/ODIM-Project/ODIM/lib-utilities/proto/chassis"
 	"github.com/ODIM-Project/ODIM/lib-utilities/response"
 	"github.com/ODIM-Project/ODIM/svc-systems/plugin"
+	"github.com/ODIM-Project/ODIM/svc-systems/smodel"
+	log "github.com/sirupsen/logrus"
 )
 
 func (h *Create) Handle(req *chassisproto.CreateChassisRequest) response.RPC {
@@ -48,6 +50,24 @@ func (h *Create) Handle(req *chassisproto.CreateChassisRequest) response.RPC {
 	if e != nil {
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, fmt.Sprintf("error occured during database access: %v", e), nil, nil)
 	}
+	log.Info("Manager UUUIIDDD....", managingManager)
+	var managerData map[string]interface{}
+	data, jerr := smodel.GetResource("Managers", managingManager)
+	if jerr != nil {
+		errorMessage := "error unmarshalling manager details: " + jerr.Error()
+		log.Error(errorMessage)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
+			nil, nil)
+	}
+
+	err := json.Unmarshal([]byte(data), &managerData)
+	if err != nil {
+		errorMessage := "error unmarshalling manager details: " + err.Error()
+		log.Error(errorMessage)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
+			nil, nil)
+	}
+	log.Info("Get resource.........", managerData)
 
 	if managingManager == "" {
 		return common.GeneralError(http.StatusBadRequest, response.ResourceNotFound, "", []interface{}{"Manager", mbc.Links.ManagedBy[0].Oid}, nil)
@@ -76,7 +96,49 @@ func (h *Create) Handle(req *chassisproto.CreateChassisRequest) response.RPC {
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, pe.Error(), nil, nil)
 	}
 
-	return pc.Post("/redfish/v1/Chassis", body)
+	resp := pc.Post("/redfish/v1/Chassis", body)
+	log.Info("Rspoossnnsee.........", resp)
+	chassisID := resp.Header["location"]
+	log.Info("Chassis ID ......", chassisID)
+	//var chassisList []string
+	// chassisList = append(chassisList, chassisID)
+	//	chassis := make(map[int]map[string]interface{})
+	managerLinks := make(map[string]interface{})
+	var chassisLink, listOfChassis []interface{}
+	// for index, val := range chassisList {
+	// 	chassis[index] = make(map[string]interface{})
+	// 	chassis[index]["@odata.id"] = val
+	// 	listOfChassis = append(listOfChassis, chassis[index])
+	// }
+	listOfChassis = append(listOfChassis, map[string]string{"@odata.id": chassisID})
+	if links, ok := managerData["Links"].(map[string]interface{}); ok {
+		if managerData["Links"].(map[string]interface{})["ManagerForChassis"] != nil {
+			chassisLink = links["ManagerForChassis"].([]interface{})
+		}
+		chassisLink = append(chassisLink, listOfChassis...)
+		managerData["Links"].(map[string]interface{})["ManagerForChassis"] = chassisLink
+
+	} else {
+		chassisLink = append(chassisLink, listOfChassis...)
+		managerLinks["ManagerForChassis"] = chassisLink
+		managerData["Links"] = managerLinks
+	}
+	mgrData, err := json.Marshal(managerData)
+	if err != nil {
+		errorMessage := "unable to marshal data for updating: " + err.Error()
+		log.Error(errorMessage)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
+			nil, nil)
+	}
+	err = smodel.GenericSave([]byte(mgrData), "Managers", managingManager)
+	if err != nil {
+		errorMessage := "error while saving manager details: " + err.Error()
+		log.Error(errorMessage)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
+			nil, nil)
+	}
+
+	return resp
 }
 
 type Create struct {
