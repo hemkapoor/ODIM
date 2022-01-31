@@ -50,7 +50,7 @@ func (h *Create) Handle(req *chassisproto.CreateChassisRequest) response.RPC {
 	if e != nil {
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, fmt.Sprintf("error occured during database access: %v", e), nil, nil)
 	}
-	var managingMgrData map[string]string
+	var managingMgrData map[string]interface{}
 	log.Info("Manager UUUIIDDD....", managingManager)
 
 	if managingManager == "" {
@@ -62,6 +62,7 @@ func (h *Create) Handle(req *chassisproto.CreateChassisRequest) response.RPC {
 	if e != nil {
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, e.Error(), nil, nil)
 	}
+	log.Info("unquote.....", managingManager)
 
 	unmarshalErr := json.Unmarshal([]byte(managingManager), &managingMgrData)
 	if unmarshalErr != nil {
