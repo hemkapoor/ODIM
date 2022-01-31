@@ -110,7 +110,7 @@ func (h *Create) Handle(req *chassisproto.CreateChassisRequest) response.RPC {
 
 	resp := pc.Post("/redfish/v1/Chassis", body)
 	log.Info("Rspoossnnsee.........", resp)
-	chassisID := resp.Header["location"]
+	chassisID := resp.Header["Location"]
 	log.Info("Chassis ID ......", chassisID)
 	//var chassisList []string
 	// chassisList = append(chassisList, chassisID)

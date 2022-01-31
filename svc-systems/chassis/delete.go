@@ -39,15 +39,27 @@ func (d *Delete) Handle(req *chassisproto.DeleteChassisRequest) response.RPC {
 	}
 
 	c, e := d.createPluginClient("URP*")
-	log.Info("delete server ......", c)
+
+	// var managerData plugin.Client
+	// err := json.Unmarshal([]byte(c), managerData)
+	// if err != nil {
+	// 	errorMessage := "error unmarshalling manager details: " + err.Error()
+	// 	log.Error(errorMessage)
+	// 	return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
+	// 		nil, nil)
+	// }
+	// log.Info("unnmmarshall....", managerData)
 	if e != nil && e.ErrNo() == errors.DBKeyNotFound {
 		return common.GeneralError(http.StatusMethodNotAllowed, response.ActionNotSupported, "", []interface{}{"DELETE"}, nil)
 	}
 	if e != nil {
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, e.Error(), nil, nil)
 	}
-
-	return c.Delete(req.URL)
+	p := c.Delete(req.URL)
+	k := c.Get(req.URL)
+	log.Info(k)
+	log.Info("delete server ......", c, k.Body, k.Header)
+	return p
 }
 
 func NewDeleteHandler(createPluginClient plugin.ClientFactory, finder func(Table string, key string, r interface{}) *errors.Error) *Delete {
