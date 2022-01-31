@@ -50,7 +50,7 @@ func (h *Create) Handle(req *chassisproto.CreateChassisRequest) response.RPC {
 	if e != nil {
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, fmt.Sprintf("error occured during database access: %v", e), nil, nil)
 	}
-	var managingMgrData map[string]interface{}
+	var managingMgrData map[string]string
 	log.Info("Manager UUUIIDDD....", managingManager)
 	unmarshalErr := json.Unmarshal([]byte(managingManager), &managingMgrData)
 	if unmarshalErr != nil {
@@ -62,7 +62,7 @@ func (h *Create) Handle(req *chassisproto.CreateChassisRequest) response.RPC {
 	log.Info("Managing mgr.....", managingMgrData["@odata.id"])
 	managerURI := managingMgrData["@odata.id"]
 	var managerData map[string]interface{}
-	data, jerr := smodel.GetResource("Managers", managerURI.(string))
+	data, jerr := smodel.GetResource("Managers", managerURI)
 	if jerr != nil {
 		errorMessage := "error unmarshalling manager details: " + jerr.Error()
 		log.Error(errorMessage)
@@ -140,7 +140,7 @@ func (h *Create) Handle(req *chassisproto.CreateChassisRequest) response.RPC {
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
 			nil, nil)
 	}
-	err = smodel.GenericSave([]byte(mgrData), "Managers", managerURI.(string))
+	err = smodel.GenericSave([]byte(mgrData), "Managers", managerURI)
 	if err != nil {
 		errorMessage := "error while saving manager details: " + err.Error()
 		log.Error(errorMessage)
