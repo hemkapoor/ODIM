@@ -74,7 +74,7 @@ func (h *Create) Handle(req *chassisproto.CreateChassisRequest) response.RPC {
 	managerURI := managingMgrData["@odata.id"]
 	log.Info("Managing mgr.....", managerURI)
 	var managerData map[string]interface{}
-	data, jerr := smodel.GetResource("Managers", managerURI)
+	data, jerr := smodel.GetResource("Managers", managerURI.(string))
 	if jerr != nil {
 		errorMessage := "error unmarshalling manager details: " + jerr.Error()
 		log.Error(errorMessage)
@@ -142,7 +142,7 @@ func (h *Create) Handle(req *chassisproto.CreateChassisRequest) response.RPC {
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
 			nil, nil)
 	}
-	err = smodel.GenericSave([]byte(mgrData), "Managers", managerURI)
+	err = smodel.GenericSave([]byte(mgrData), "Managers", managerURI.(string))
 	if err != nil {
 		errorMessage := "error while saving manager details: " + err.Error()
 		log.Error(errorMessage)
