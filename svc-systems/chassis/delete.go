@@ -56,7 +56,7 @@ func (d *Delete) Handle(req *chassisproto.DeleteChassisRequest) response.RPC {
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
 			nil, nil)
 	}
-	managerURI := plugins[0].ManagerUUID
+	managerURI := "/redfish/v1/Managers/" + plugins[0].ManagerUUID
 	log.Info("Manager URI", managerURI)
 	data, jerr := smodel.GetResource("Managers", managerURI)
 	if jerr != nil {
@@ -130,6 +130,6 @@ func findAllPlugins(key string) (res []*smodel.Plugin, err error) {
 		}
 		res = append(res, plugin)
 	}
-	log.Info("finddd pluginn...", &res)
+	log.Info("finddd pluginn...", res)
 	return
 }
