@@ -18,6 +18,7 @@ package chassis
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"reflect"
 
@@ -57,7 +58,7 @@ func (d *Delete) Handle(req *chassisproto.DeleteChassisRequest) response.RPC {
 			nil, nil)
 	}
 	managerURI := "/redfish/v1/Managers/" + plugins[0].ManagerUUID
-	log.Info("Manager URI", managerURI)
+	log.Info("Manager URI...", managerURI)
 	data, jerr := smodel.GetResource("Managers", managerURI)
 	if jerr != nil {
 		errorMessage := "error unmarshalling manager details: " + jerr.Error()
@@ -65,6 +66,7 @@ func (d *Delete) Handle(req *chassisproto.DeleteChassisRequest) response.RPC {
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
 			nil, nil)
 	}
+	log.Info("get resource....", data)
 	var managerData map[string]interface{}
 	err = json.Unmarshal([]byte(data), &managerData)
 	if err != nil {
@@ -73,16 +75,19 @@ func (d *Delete) Handle(req *chassisproto.DeleteChassisRequest) response.RPC {
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
 			nil, nil)
 	}
+	fmt.Println("unmarshalll...", managerData)
 
 	if links, ok := managerData["Links"].(map[string]interface{}); ok {
 		if managerForChassis, ok := links["ManagerForChassis"].([]interface{}); ok {
 			for k, v := range managerForChassis {
-				if reflect.DeepEqual(v.(map[string]interface{})["@odata.id"], req.URL) {
-					managerForChassis = append(managerForChassis[:k], managerForChassis[k+1:]...)
-					if len(managerForChassis) != 0 {
-						links["ManagerForChassis"] = managerForChassis
-					} else {
-						delete(links, "ManagerForChassis")
+				if v.(map[string]interface{})["@odata.id"] != nil {
+					if reflect.DeepEqual(v.(map[string]interface{})["@odata.id"], req.URL) {
+						managerForChassis = append(managerForChassis[:k], managerForChassis[k+1:]...)
+						if len(managerForChassis) != 0 {
+							links["ManagerForChassis"] = managerForChassis
+						} else {
+							delete(links, "ManagerForChassis")
+						}
 					}
 				}
 			}
@@ -94,6 +99,7 @@ func (d *Delete) Handle(req *chassisproto.DeleteChassisRequest) response.RPC {
 		log.Error(errorMessage)
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
 	}
+	log.Info("Generic Save...", detail)
 	genericErr := smodel.GenericSave([]byte(detail), "Managers", managerURI)
 	if genericErr != nil {
 		errorMessage := "error while saving manager details: " + genericErr.Error()
