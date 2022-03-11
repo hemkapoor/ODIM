@@ -318,7 +318,8 @@ func (e *ExternalInterface) deleteCompute(key string, index int, pluginID string
 	if derr != nil {
 		log.Error("error while trying to collect the chassis list: " + derr.Error())
 	}
-
+	log.Info("Chassis list before delete.", chassisList)
+	log.Info("Server list before delete.", key)
 	managersList, derr := agmodel.GetAllMatchingDetails("Managers", keys[0], common.InMemory)
 	if derr != nil {
 		log.Error("error while trying to collect the manager list: " + derr.Error())
@@ -387,6 +388,7 @@ func (e *ExternalInterface) deleteCompute(key string, index int, pluginID string
 func deleteLinkDetails(managerData map[string]interface{}, systemID string, chassisList []string) map[string]interface{} {
 	if links, ok := managerData["Links"].(map[string]interface{}); ok {
 		if managerForServers, ok := links["ManagerForServers"].([]interface{}); ok {
+			log.Info("Server list before delete link", managerForServers)
 			for k, v := range managerForServers {
 				if reflect.DeepEqual(v.(map[string]interface{})["@odata.id"], systemID) {
 					managerForServers = append(managerForServers[:k], managerForServers[k+1:]...)
@@ -400,6 +402,7 @@ func deleteLinkDetails(managerData map[string]interface{}, systemID string, chas
 		}
 		for _, val := range chassisList {
 			if managerForChassis, ok := links["ManagerForChassis"].([]interface{}); ok {
+				log.Info("Chassis list before delete link", managerForChassis)
 				for k, v := range managerForChassis {
 					if reflect.DeepEqual(v.(map[string]interface{})["@odata.id"], val) {
 						managerForChassis = append(managerForChassis[:k], managerForChassis[k+1:]...)
@@ -413,7 +416,8 @@ func deleteLinkDetails(managerData map[string]interface{}, systemID string, chas
 			}
 		}
 	}
-
+	log.Info("Chassis list link after delete.", chassisList)
+	log.Info("Server list link after delete.", systemID)
 	return managerData
 }
 
