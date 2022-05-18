@@ -16,22 +16,22 @@
 declare ACTION
 declare DIR_PATH
 declare -A images_list=(\
-		["account-session"]="3.0" \
-		["aggregation"]="3.0" \
-		["api"]="3.0" \
+		["account-session"]="4.0" \
+		["aggregation"]="4.0" \
+		["api"]="4.0" \
 		["etcd"]="1.16" \
-		["events"]="3.0" \
-		["fabrics"]="3.0" \
+		["events"]="4.0" \
+		["fabrics"]="4.0" \
 		["kafka"]="2.0" \
-		["managers"]="3.0" \
+		["managers"]="4.0" \
 		["redis"]="2.0" \
-		["systems"]="3.0" \
-		["task"]="3.0" \
+		["systems"]="4.0" \
+		["task"]="4.0" \
 		["telemetry"]="2.0"\
-		["update"]="3.0" \
+		["update"]="4.0" \
 		["zookeeper"]="2.0" \
-		["composition-service"]="1.0" \
-		["licenses"]="1.0" \
+		["composition-service"]="2.0" \
+		["licenses"]="2.0" \
 		)
 
 eval_cmd_exec()

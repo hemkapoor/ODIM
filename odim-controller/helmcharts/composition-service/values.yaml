@@ -3,4 +3,4 @@ odimra:
   groupID:
   haDeploymentEnabled: false
 compositionservice:
-  imageTag: "1.0"
+  imageTag: "2.0"
