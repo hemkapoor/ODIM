@@ -15,6 +15,7 @@
 package licenses
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -24,6 +25,9 @@ import (
 	"github.com/ODIM-Project/ODIM/lib-utilities/common"
 	licenseproto "github.com/ODIM-Project/ODIM/lib-utilities/proto/licenses"
 	"github.com/ODIM-Project/ODIM/lib-utilities/response"
+	lcommon "github.com/ODIM-Project/ODIM/svc-licenses/lcommon"
+	"github.com/ODIM-Project/ODIM/svc-licenses/model"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -101,5 +105,117 @@ func (e *ExternalInterface) GetLicenseResource(req *licenseproto.GetLicenseResou
 
 	resp.Body = licenseResp
 	resp.StatusCode = http.StatusOK
+	return resp
+}
+
+type LicenseInstallRequest struct {
+	LicenseString string             `json:"LicenseString,omitempty"`
+	Links         *AuthorizedDevices `json:"Links,omitempty"`
+}
+
+type AuthorizedDevices struct {
+	Link []*Link `json:"AuthorizedDevices,omitempty"`
+}
+type Link struct {
+	Oid string `json:"@odata.id"`
+}
+
+// UpdateLicenseResource to update license resource
+func (e *ExternalInterface) UpdateLicenseResource(req *licenseproto.UpdateLicenseRequest) response.RPC {
+	log.Info("in post command..................")
+	var resp response.RPC
+	var contactRequest model.PluginContactRequest
+	var installreq LicenseInstallRequest
+	log.Info("LLLLLLLLLLLLLLLLLLL", req)
+	log.Info("1111111111111111111122222222222", req.RequestBody)
+	genErr := json.Unmarshal(req.RequestBody, &installreq)
+	if genErr != nil {
+		errMsg := "Unable to unmarshal the install license request" + genErr.Error()
+		log.Error(errMsg)
+		return common.GeneralError(http.StatusBadRequest, response.InternalError, errMsg, nil, nil)
+	}
+	log.Info("11111111111111111111", installreq)
+	var serverURI string
+	for _, t := range installreq.Links.Link {
+		serverURI = t.Oid
+	}
+	log.Info("serverURI....................", serverURI)
+	uuid, _, err := lcommon.GetIDsFromURI(serverURI)
+	if err != nil {
+		errMsg := "error while trying to get system ID from " + serverURI + ": " + err.Error()
+		log.Error(errMsg)
+		return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"SystemID", serverURI}, nil)
+	}
+	log.Info("uuuuuuuuuuuuiiiiiiiiiiiiiidddddddddddd", uuid)
+	// Get target device Credentials from using device UUID
+	target, targetErr := lcommon.GetTarget(uuid)
+	if targetErr != nil {
+		errMsg := err.Error()
+		log.Error(errMsg)
+		return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"target", uuid}, nil)
+	}
+	log.Info("target.................", target)
+	decryptedPasswordByte, err := e.External.DevicePassword(target.Password)
+	if err != nil {
+		errMsg := "error while trying to decrypt device password: " + err.Error()
+		log.Error(errMsg)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+	}
+	log.Info("decrytpt pass.............................", decryptedPasswordByte)
+	target.Password = decryptedPasswordByte
+
+	// Get the Plugin info
+	plugin, errs := lcommon.GetPluginData(target.PluginID)
+	if errs != nil {
+		errMsg := "error while getting plugin data: " + errs.Error()
+		log.Error(errMsg)
+		return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"PluginData", target.PluginID}, nil)
+	}
+	log.Info("Pluginnnnnnnnnnn....................", plugin)
+	encodedKey := base64.StdEncoding.EncodeToString([]byte(installreq.LicenseString))
+	reqPostBody := map[string]interface{}{"LicenseString": encodedKey}
+	reqBody, _ := json.Marshal(reqPostBody)
+
+	contactRequest.Plugin = *plugin
+	contactRequest.ContactClient = e.External.ContactClient
+	contactRequest.Plugin.ID = target.PluginID
+	contactRequest.HTTPMethodType = http.MethodPost
+
+	if strings.EqualFold(plugin.PreferredAuthType, "XAuthToken") {
+		log.Info("insideee.............")
+		contactRequest.DeviceInfo = map[string]interface{}{
+			"UserName": plugin.Username,
+			"Password": string(plugin.Password),
+		}
+		contactRequest.OID = "/ODIM/v1/Sessions"
+		_, token, getResponse, err := lcommon.ContactPlugin(contactRequest, "error while logging in to plugin: ")
+		if err != nil {
+			errMsg := err.Error()
+			log.Error(errMsg)
+			return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
+		}
+		log.Info("resppppppppppppppppppppp.....................", getResponse)
+		contactRequest.Token = token
+	} else {
+		log.Info("hereeee....................")
+		contactRequest.LoginCredentials = map[string]string{
+			"UserName": plugin.Username,
+			"Password": string(plugin.Password),
+		}
+
+	}
+	target.PostBody = []byte(reqBody)
+	contactRequest.DeviceInfo = target
+	contactRequest.OID = "/ODIM/v1/LicenseService/Licenses"
+	contactRequest.PostBody = reqBody
+	body, _, getResponse, err := e.External.ContactPlugin(contactRequest, "error while installing license: ")
+	if err != nil {
+		errMsg := err.Error()
+		log.Error(errMsg)
+		return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
+	}
+	log.Info("RESPPPPPPPPPPPPPPPPPPPPPPPPP!!!!!!!!!!!!!!!!", body)
+	resp.Body = body
+	resp.StatusCode = getResponse.StatusCode
 	return resp
 }

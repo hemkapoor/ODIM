@@ -66,3 +66,19 @@ func GetLicenseResource(req licenseproto.GetLicenseResourceRequest) (*licensepro
 	}
 	return resp, nil
 }
+
+// UpdateLicenseResource will do the rpc call to update License resource
+func UpdateLicenseResource(req licenseproto.UpdateLicenseRequest) (*licenseproto.GetLicenseResponse, error) {
+	conn, err := services.ODIMService.Client(services.Licenses)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create client connection: %v", err)
+	}
+	defer conn.Close()
+	licenseService := licenseproto.NewLicensesClient(conn)
+	resp, err := licenseService.UpdateLicenseResource(context.TODO(), &req)
+	if err != nil {
+		return nil, fmt.Errorf("RPC error: %v", err)
+	}
+
+	return resp, err
+}

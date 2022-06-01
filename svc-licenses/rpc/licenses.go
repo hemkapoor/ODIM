@@ -57,3 +57,15 @@ func (l *Licenses) GetLicenseResource(ctx context.Context, req *licenseproto.Get
 	fillProtoResponse(resp, l.connector.GetLicenseResource(req))
 	return resp, nil
 }
+
+// UpdateLicenseResource to update license resource
+func (l *Licenses) UpdateLicenseResource(ctx context.Context, req *licenseproto.UpdateLicenseRequest) (*licenseproto.GetLicenseResponse, error) {
+	resp := &licenseproto.GetLicenseResponse{}
+	authResp := l.connector.External.Auth(req.SessionToken, []string{common.PrivilegeLogin}, []string{})
+	if authResp.StatusCode != http.StatusOK {
+		fillProtoResponse(resp, authResp)
+		return resp, nil
+	}
+	fillProtoResponse(resp, l.connector.UpdateLicenseResource(req))
+	return resp, nil
+}

@@ -1163,7 +1163,6 @@ func CompositionServiceMethodNotAllowed(ctx iris.Context) {
 	return
 }
 
-
 // LicenseMethodNotAllowed holds builds reponse for the unallowed http operation on License URLs and returns 405 error.
 func LicenseMethodNotAllowed(ctx iris.Context) {
 	defer ctx.Next()
@@ -1186,6 +1185,7 @@ func LicenseMethodNotAllowed(ctx iris.Context) {
 	fillMethodNotAllowedErrorResponse(ctx)
 	return
 }
+
 // ManagersMethodNotAllowed holds builds reponse for the unallowed http operation on Managers URLs and returns 405 error.
 func ManagersMethodNotAllowed(ctx iris.Context) {
 	defer ctx.Next()

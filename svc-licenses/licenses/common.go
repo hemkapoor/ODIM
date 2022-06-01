@@ -43,6 +43,7 @@ type External struct {
 	GetTarget          func(string) (*model.Target, *errors.Error)
 	GetSessionUserName func(string) (string, error)
 	GenericSave        func([]byte, string, string) error
+	GetPluginStatus    func(model.Plugin) bool
 }
 
 // DB struct holds the function pointers to database operations

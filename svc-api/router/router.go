@@ -182,9 +182,10 @@ func Router() *iris.Application {
 	}
 
 	licenses := handle.LicenseRPCs{
-		GetLicenseServiceRPC:    rpc.GetLicenseService,
-		GetLicenseCollectionRPC: rpc.GetLicenseCollection,
-		GetLicenseResourceRPC:   rpc.GetLicenseResource,
+		GetLicenseServiceRPC:     rpc.GetLicenseService,
+		GetLicenseCollectionRPC:  rpc.GetLicenseCollection,
+		GetLicenseResourceRPC:    rpc.GetLicenseResource,
+		UpdateLicenseResourceRPC: rpc.UpdateLicenseResource,
 	}
 
 	registryFile := handle.Registry{
@@ -683,6 +684,7 @@ func Router() *iris.Application {
 	licenseService.Get("/", licenses.GetLicenseService)
 	licenseService.Get("/Licenses", licenses.GetLicenseCollection)
 	licenseService.Get("/Licenses/{id}", licenses.GetLicenseResource)
+	licenseService.Post("/Licenses", licenses.UpdateLicenseResource)
 
 	// composition service
 	compositionService := v1.Party("/CompositionService", middleware.SessionDelMiddleware)
