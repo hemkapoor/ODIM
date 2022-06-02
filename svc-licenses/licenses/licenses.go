@@ -157,7 +157,7 @@ func (e *ExternalInterface) UpdateLicenseResource(req *licenseproto.UpdateLicens
 		return common.GeneralError(http.StatusBadRequest, response.InternalError, errMsg, nil, nil)
 	}
 	log.Info("11111111111111111111", installreq)
-	var serverURI, managerID string
+	var serverURI string
 	var err error
 	var managerLink []string
 	linksMap := make(map[string]bool)
@@ -185,7 +185,7 @@ func (e *ExternalInterface) UpdateLicenseResource(req *licenseproto.UpdateLicens
 
 	for serverURI := range linksMap {
 		log.Info("serverURI....................", serverURI)
-		uuid, _, err := lcommon.GetIDsFromURI(serverURI)
+		uuid, managerID, err := lcommon.GetIDsFromURI(serverURI)
 		if err != nil {
 			errMsg := "error while trying to get system ID from " + serverURI + ": " + err.Error()
 			log.Error(errMsg)
@@ -218,8 +218,8 @@ func (e *ExternalInterface) UpdateLicenseResource(req *licenseproto.UpdateLicens
 		}
 		log.Info("Pluginnnnnnnnnnn....................", plugin)
 		encodedKey := base64.StdEncoding.EncodeToString([]byte(installreq.LicenseString))
-		managerURL := "/redfish/v1/Managers/" + managerID
-		reqPostBody := map[string]interface{}{"LicenseString": encodedKey, "AuthorizedDevices": managerURL}
+		managerURI := "/redfish/v1/Managers/" + managerID
+		reqPostBody := map[string]interface{}{"LicenseString": encodedKey, "AuthorizedDevices": managerURI}
 		reqBody, _ := json.Marshal(reqPostBody)
 
 		contactRequest.Plugin = *plugin
@@ -254,16 +254,15 @@ func (e *ExternalInterface) UpdateLicenseResource(req *licenseproto.UpdateLicens
 		contactRequest.DeviceInfo = target
 		contactRequest.OID = "/ODIM/v1/LicenseService/Licenses"
 		contactRequest.PostBody = reqBody
-		body, _, getResponse, err := e.External.ContactPlugin(contactRequest, "error while installing license: ")
+		_, _, getResponse, err := e.External.ContactPlugin(contactRequest, "error while installing license: ")
 		if err != nil {
 			errMsg := err.Error()
 			log.Error(errMsg)
 			return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
 		}
-		log.Info("RESPPPPPPPPPPPPPPPPPPPPPPPPP!!!!!!!!!!!!!!!!", body)
+		log.Info("RESPPPPPPPPPPPPPPPPPPPPPPPPP!!!!!!!!!!!!!!!!", getResponse)
 	}
 
-	//resp.Body = body
-	resp.StatusCode = http.StatusOK
+	resp.StatusCode = http.StatusNoContent
 	return resp
 }
