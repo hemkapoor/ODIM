@@ -120,6 +120,28 @@ type Link struct {
 	Oid string `json:"@odata.id"`
 }
 
+func getManagerURL(systemURI string) ([]string, error) {
+	var resource map[string]interface{}
+	var managerLink string
+	var links []string
+	respData, err := lcommon.GetResource("ComputerSystem", systemURI, persistencemgr.InMemory)
+	if err != nil {
+		return nil, err
+	}
+	jerr := json.Unmarshal([]byte(respData), &resource)
+	if jerr != nil {
+		return nil, jerr
+	}
+	members := resource["Links"].(map[string]interface{})["ManagedBy"]
+	log.Info("meemmberssss///////////////////", members)
+	for _, member := range members.([]interface{}) {
+		managerLink = member.(map[string]interface{})["@odata.id"].(string)
+	}
+	links = append(links, managerLink)
+	log.Info("Linksssssssssssssss............", links)
+	return links, nil
+}
+
 // UpdateLicenseResource to update license resource
 func (e *ExternalInterface) UpdateLicenseResource(req *licenseproto.UpdateLicenseRequest) response.RPC {
 	log.Info("in post command..................")
@@ -135,87 +157,113 @@ func (e *ExternalInterface) UpdateLicenseResource(req *licenseproto.UpdateLicens
 		return common.GeneralError(http.StatusBadRequest, response.InternalError, errMsg, nil, nil)
 	}
 	log.Info("11111111111111111111", installreq)
-	var serverURI string
-	for _, t := range installreq.Links.Link {
-		serverURI = t.Oid
-	}
-	log.Info("serverURI....................", serverURI)
-	uuid, _, err := lcommon.GetIDsFromURI(serverURI)
-	if err != nil {
-		errMsg := "error while trying to get system ID from " + serverURI + ": " + err.Error()
-		log.Error(errMsg)
-		return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"SystemID", serverURI}, nil)
-	}
-	log.Info("uuuuuuuuuuuuiiiiiiiiiiiiiidddddddddddd", uuid)
-	// Get target device Credentials from using device UUID
-	target, targetErr := lcommon.GetTarget(uuid)
-	if targetErr != nil {
-		errMsg := err.Error()
-		log.Error(errMsg)
-		return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"target", uuid}, nil)
-	}
-	log.Info("target.................", target)
-	decryptedPasswordByte, err := e.External.DevicePassword(target.Password)
-	if err != nil {
-		errMsg := "error while trying to decrypt device password: " + err.Error()
-		log.Error(errMsg)
-		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
-	}
-	log.Info("decrytpt pass.............................", decryptedPasswordByte)
-	target.Password = decryptedPasswordByte
-
-	// Get the Plugin info
-	plugin, errs := lcommon.GetPluginData(target.PluginID)
-	if errs != nil {
-		errMsg := "error while getting plugin data: " + errs.Error()
-		log.Error(errMsg)
-		return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"PluginData", target.PluginID}, nil)
-	}
-	log.Info("Pluginnnnnnnnnnn....................", plugin)
-	encodedKey := base64.StdEncoding.EncodeToString([]byte(installreq.LicenseString))
-	reqPostBody := map[string]interface{}{"LicenseString": encodedKey}
-	reqBody, _ := json.Marshal(reqPostBody)
-
-	contactRequest.Plugin = *plugin
-	contactRequest.ContactClient = e.External.ContactClient
-	contactRequest.Plugin.ID = target.PluginID
-	contactRequest.HTTPMethodType = http.MethodPost
-
-	if strings.EqualFold(plugin.PreferredAuthType, "XAuthToken") {
-		log.Info("insideee.............")
-		contactRequest.DeviceInfo = map[string]interface{}{
-			"UserName": plugin.Username,
-			"Password": string(plugin.Password),
+	var serverURI, managerID string
+	var err error
+	var managerLink []string
+	linksMap := make(map[string]bool)
+	for _, serverIDs := range installreq.Links.Link {
+		serverURI = serverIDs.Oid
+		if strings.Contains(serverURI, "Systems") {
+			managerLink, err = getManagerURL(serverURI)
+			if err != nil {
+				errMsg := "Unable to get System resource"
+				log.Error(errMsg)
+				return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+			}
+			for _, link := range managerLink {
+				linksMap[link] = true
+			}
+		} else if strings.Contains(serverURI, "Managers") {
+			linksMap[serverURI] = true
+		} else {
+			errMsg := "Invalid AuthorizedDevices links"
+			log.Error(errMsg)
+			return common.GeneralError(http.StatusBadRequest, response.InternalError, errMsg, nil, nil)
 		}
-		contactRequest.OID = "/ODIM/v1/Sessions"
-		_, token, getResponse, err := lcommon.ContactPlugin(contactRequest, "error while logging in to plugin: ")
+	}
+	log.Info(">>>>>>>>>>>>>>>>>map link", linksMap)
+
+	for serverURI := range linksMap {
+		log.Info("serverURI....................", serverURI)
+		uuid, _, err := lcommon.GetIDsFromURI(serverURI)
+		if err != nil {
+			errMsg := "error while trying to get system ID from " + serverURI + ": " + err.Error()
+			log.Error(errMsg)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"SystemID", serverURI}, nil)
+		}
+		log.Info("uuuuuuuuuuuuiiiiiiiiiiiiiidddddddddddd", uuid)
+		// Get target device Credentials from using device UUID
+		target, targetErr := lcommon.GetTarget(uuid)
+		if targetErr != nil {
+			errMsg := err.Error()
+			log.Error(errMsg)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"target", uuid}, nil)
+		}
+		log.Info("target.................", target)
+		decryptedPasswordByte, err := e.External.DevicePassword(target.Password)
+		if err != nil {
+			errMsg := "error while trying to decrypt device password: " + err.Error()
+			log.Error(errMsg)
+			return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		}
+		log.Info("decrytpt pass.............................", decryptedPasswordByte)
+		target.Password = decryptedPasswordByte
+
+		// Get the Plugin info
+		plugin, errs := lcommon.GetPluginData(target.PluginID)
+		if errs != nil {
+			errMsg := "error while getting plugin data: " + errs.Error()
+			log.Error(errMsg)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"PluginData", target.PluginID}, nil)
+		}
+		log.Info("Pluginnnnnnnnnnn....................", plugin)
+		encodedKey := base64.StdEncoding.EncodeToString([]byte(installreq.LicenseString))
+		managerURL := "/redfish/v1/Managers/" + managerID
+		reqPostBody := map[string]interface{}{"LicenseString": encodedKey, "AuthorizedDevices": managerURL}
+		reqBody, _ := json.Marshal(reqPostBody)
+
+		contactRequest.Plugin = *plugin
+		contactRequest.ContactClient = e.External.ContactClient
+		contactRequest.Plugin.ID = target.PluginID
+		contactRequest.HTTPMethodType = http.MethodPost
+
+		if strings.EqualFold(plugin.PreferredAuthType, "XAuthToken") {
+			log.Info("insideee.............")
+			contactRequest.DeviceInfo = map[string]interface{}{
+				"UserName": plugin.Username,
+				"Password": string(plugin.Password),
+			}
+			contactRequest.OID = "/ODIM/v1/Sessions"
+			_, token, getResponse, err := lcommon.ContactPlugin(contactRequest, "error while logging in to plugin: ")
+			if err != nil {
+				errMsg := err.Error()
+				log.Error(errMsg)
+				return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
+			}
+			log.Info("resppppppppppppppppppppp.....................", getResponse)
+			contactRequest.Token = token
+		} else {
+			log.Info("hereeee....................")
+			contactRequest.LoginCredentials = map[string]string{
+				"UserName": plugin.Username,
+				"Password": string(plugin.Password),
+			}
+
+		}
+		target.PostBody = []byte(reqBody)
+		contactRequest.DeviceInfo = target
+		contactRequest.OID = "/ODIM/v1/LicenseService/Licenses"
+		contactRequest.PostBody = reqBody
+		body, _, getResponse, err := e.External.ContactPlugin(contactRequest, "error while installing license: ")
 		if err != nil {
 			errMsg := err.Error()
 			log.Error(errMsg)
 			return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
 		}
-		log.Info("resppppppppppppppppppppp.....................", getResponse)
-		contactRequest.Token = token
-	} else {
-		log.Info("hereeee....................")
-		contactRequest.LoginCredentials = map[string]string{
-			"UserName": plugin.Username,
-			"Password": string(plugin.Password),
-		}
+		log.Info("RESPPPPPPPPPPPPPPPPPPPPPPPPP!!!!!!!!!!!!!!!!", body)
+	}
 
-	}
-	target.PostBody = []byte(reqBody)
-	contactRequest.DeviceInfo = target
-	contactRequest.OID = "/ODIM/v1/LicenseService/Licenses"
-	contactRequest.PostBody = reqBody
-	body, _, getResponse, err := e.External.ContactPlugin(contactRequest, "error while installing license: ")
-	if err != nil {
-		errMsg := err.Error()
-		log.Error(errMsg)
-		return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
-	}
-	log.Info("RESPPPPPPPPPPPPPPPPPPPPPPPPP!!!!!!!!!!!!!!!!", body)
-	resp.Body = body
-	resp.StatusCode = getResponse.StatusCode
+	//resp.Body = body
+	resp.StatusCode = http.StatusOK
 	return resp
 }
