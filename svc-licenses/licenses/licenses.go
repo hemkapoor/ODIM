@@ -108,46 +108,12 @@ func (e *ExternalInterface) GetLicenseResource(req *licenseproto.GetLicenseResou
 	return resp
 }
 
-type LicenseInstallRequest struct {
-	LicenseString string             `json:"LicenseString,omitempty"`
-	Links         *AuthorizedDevices `json:"Links,omitempty"`
-}
-
-type AuthorizedDevices struct {
-	Link []*Link `json:"AuthorizedDevices,omitempty"`
-}
-type Link struct {
-	Oid string `json:"@odata.id"`
-}
-
-func getManagerURL(systemURI string) ([]string, error) {
-	var resource map[string]interface{}
-	var managerLink string
-	var links []string
-	respData, err := lcommon.GetResource("ComputerSystem", systemURI, persistencemgr.InMemory)
-	if err != nil {
-		return nil, err
-	}
-	jerr := json.Unmarshal([]byte(respData), &resource)
-	if jerr != nil {
-		return nil, jerr
-	}
-	members := resource["Links"].(map[string]interface{})["ManagedBy"]
-	log.Info("meemmberssss///////////////////", members)
-	for _, member := range members.([]interface{}) {
-		managerLink = member.(map[string]interface{})["@odata.id"].(string)
-	}
-	links = append(links, managerLink)
-	log.Info("Linksssssssssssssss............", links)
-	return links, nil
-}
-
-// UpdateLicenseResource to update license resource
-func (e *ExternalInterface) UpdateLicenseResource(req *licenseproto.UpdateLicenseRequest) response.RPC {
+// InstallLicenseService to update license resource
+func (e *ExternalInterface) InstallLicenseService(req *licenseproto.InstallLicenseRequest) response.RPC {
 	log.Info("in post command..................")
 	var resp response.RPC
 	var contactRequest model.PluginContactRequest
-	var installreq LicenseInstallRequest
+	var installreq dmtf.LicenseInstallRequest
 	log.Info("LLLLLLLLLLLLLLLLLLL", req)
 	log.Info("1111111111111111111122222222222", req.RequestBody)
 	genErr := json.Unmarshal(req.RequestBody, &installreq)
@@ -157,6 +123,11 @@ func (e *ExternalInterface) UpdateLicenseResource(req *licenseproto.UpdateLicens
 		return common.GeneralError(http.StatusBadRequest, response.InternalError, errMsg, nil, nil)
 	}
 	log.Info("11111111111111111111", installreq)
+	if installreq.Links == nil {
+		errMsg := "Invalid request, AuthorizedDevices links missing"
+		log.Error(errMsg)
+		return common.GeneralError(http.StatusBadRequest, response.InternalError, errMsg, nil, nil)
+	}
 	var serverURI string
 	var err error
 	var managerLink []string
@@ -164,7 +135,7 @@ func (e *ExternalInterface) UpdateLicenseResource(req *licenseproto.UpdateLicens
 	for _, serverIDs := range installreq.Links.Link {
 		serverURI = serverIDs.Oid
 		if strings.Contains(serverURI, "Systems") {
-			managerLink, err = getManagerURL(serverURI)
+			managerLink, err = e.getManagerURL(serverURI)
 			if err != nil {
 				errMsg := "Unable to get System resource"
 				log.Error(errMsg)
@@ -193,9 +164,9 @@ func (e *ExternalInterface) UpdateLicenseResource(req *licenseproto.UpdateLicens
 		}
 		log.Info("uuuuuuuuuuuuiiiiiiiiiiiiiidddddddddddd", uuid)
 		// Get target device Credentials from using device UUID
-		target, targetErr := lcommon.GetTarget(uuid)
+		target, targetErr := e.External.GetTarget(uuid)
 		if targetErr != nil {
-			errMsg := err.Error()
+			errMsg := targetErr.Error()
 			log.Error(errMsg)
 			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"target", uuid}, nil)
 		}
@@ -210,7 +181,7 @@ func (e *ExternalInterface) UpdateLicenseResource(req *licenseproto.UpdateLicens
 		target.Password = decryptedPasswordByte
 
 		// Get the Plugin info
-		plugin, errs := lcommon.GetPluginData(target.PluginID)
+		plugin, errs := e.External.GetPluginData(target.PluginID)
 		if errs != nil {
 			errMsg := "error while getting plugin data: " + errs.Error()
 			log.Error(errMsg)
@@ -265,4 +236,27 @@ func (e *ExternalInterface) UpdateLicenseResource(req *licenseproto.UpdateLicens
 
 	resp.StatusCode = http.StatusNoContent
 	return resp
+}
+
+func (e *ExternalInterface) getManagerURL(systemURI string) ([]string, error) {
+	var resource map[string]interface{}
+	var managerLink string
+	var links []string
+	log.Info("QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ", systemURI)
+	respData, err := e.DB.GetResource("ComputerSystem", systemURI, persistencemgr.InMemory)
+	if err != nil {
+		return nil, err
+	}
+	jerr := json.Unmarshal([]byte(respData), &resource)
+	if jerr != nil {
+		return nil, jerr
+	}
+	members := resource["Links"].(map[string]interface{})["ManagedBy"]
+	log.Info("meemmberssss///////////////////", members)
+	for _, member := range members.([]interface{}) {
+		managerLink = member.(map[string]interface{})["@odata.id"].(string)
+	}
+	links = append(links, managerLink)
+	log.Info("Linksssssssssssssss............", links)
+	return links, nil
 }

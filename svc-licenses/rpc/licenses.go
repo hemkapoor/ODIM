@@ -59,13 +59,13 @@ func (l *Licenses) GetLicenseResource(ctx context.Context, req *licenseproto.Get
 }
 
 // UpdateLicenseResource to update license resource
-func (l *Licenses) UpdateLicenseResource(ctx context.Context, req *licenseproto.UpdateLicenseRequest) (*licenseproto.GetLicenseResponse, error) {
+func (l *Licenses) InstallLicenseService(ctx context.Context, req *licenseproto.InstallLicenseRequest) (*licenseproto.GetLicenseResponse, error) {
 	resp := &licenseproto.GetLicenseResponse{}
 	authResp := l.connector.External.Auth(req.SessionToken, []string{common.PrivilegeLogin}, []string{})
 	if authResp.StatusCode != http.StatusOK {
 		fillProtoResponse(resp, authResp)
 		return resp, nil
 	}
-	fillProtoResponse(resp, l.connector.UpdateLicenseResource(req))
+	fillProtoResponse(resp, l.connector.InstallLicenseService(req))
 	return resp, nil
 }

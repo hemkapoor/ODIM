@@ -31,7 +31,7 @@ type LicenseRPCs struct {
 	GetLicenseServiceRPC     func(req licenseproto.GetLicenseServiceRequest) (*licenseproto.GetLicenseResponse, error)
 	GetLicenseCollectionRPC  func(req licenseproto.GetLicenseRequest) (*licenseproto.GetLicenseResponse, error)
 	GetLicenseResourceRPC    func(req licenseproto.GetLicenseResourceRequest) (*licenseproto.GetLicenseResponse, error)
-	UpdateLicenseResourceRPC func(req licenseproto.UpdateLicenseRequest) (*licenseproto.GetLicenseResponse, error)
+	InstallLicenseServiceRPC func(req licenseproto.InstallLicenseRequest) (*licenseproto.GetLicenseResponse, error)
 }
 
 func (l *LicenseRPCs) GetLicenseService(ctx iris.Context) {
@@ -126,7 +126,7 @@ func (l *LicenseRPCs) GetLicenseResource(ctx iris.Context) {
 	ctx.Write(resp.Body)
 }
 
-func (l *LicenseRPCs) UpdateLicenseResource(ctx iris.Context) {
+func (l *LicenseRPCs) InstallLicenseService(ctx iris.Context) {
 	defer ctx.Next()
 	var reqIn interface{}
 	err := ctx.ReadJSON(&reqIn)
@@ -149,7 +149,7 @@ func (l *LicenseRPCs) UpdateLicenseResource(ctx iris.Context) {
 		ctx.JSON(&response.Body)
 		return
 	}
-	req := licenseproto.UpdateLicenseRequest{
+	req := licenseproto.InstallLicenseRequest{
 		SessionToken: ctx.Request().Header.Get("X-Auth-Token"),
 		URL:          ctx.Request().RequestURI,
 		RequestBody:  request,
@@ -162,7 +162,7 @@ func (l *LicenseRPCs) UpdateLicenseResource(ctx iris.Context) {
 		ctx.JSON(&response.Body)
 		return
 	}
-	resp, err := l.UpdateLicenseResourceRPC(req)
+	resp, err := l.InstallLicenseServiceRPC(req)
 	if err != nil {
 		errorMessage := "error:  RPC error:" + err.Error()
 		log.Error(errorMessage)
