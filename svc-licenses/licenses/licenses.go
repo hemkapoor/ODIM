@@ -257,8 +257,12 @@ func (e *ExternalInterface) getDetailsFromAggregate(aggregateURI string) ([]stri
 	if err != nil {
 		return nil, err
 	}
+	jsonStr, jerr := JsonMarshalFunc(respData)
+	if jerr != nil {
+		return nil, jerr
+	}
 	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	jerr := JsonUnMarshalFunc([]byte(respData.(string)), &resource)
+	jerr = JsonUnMarshalFunc([]byte(jsonStr), &resource)
 	fmt.Println("KKKKKKKKKKKKKKKKKAAAAA11111", resource)
 	if jerr != nil {
 		return nil, jerr
