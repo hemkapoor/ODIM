@@ -51,14 +51,17 @@ func GetResource(Table, key string, dbtype persistencemgr.DbType) (string, *erro
 	if err != nil {
 		return "", err
 	}
+	log.Info("TTTTTTTTTTTTTTTTTTTTTTTTT", Table, key)
 	resourceData, err := conn.Read(Table, key)
 	if err != nil {
 		return "", errors.PackError(err.ErrNo(), "error while trying to get resource details: ", err.Error())
 	}
+	log.Info("llllllllllllllllllllllllll", resourceData)
 	var resource string
 	if errs := json.Unmarshal([]byte(resourceData), &resource); errs != nil {
 		return "", errors.PackError(errors.UndefinedErrorType, errs)
 	}
+	log.Info("OOOOOOOOOOOOOOOOOOOOOOOOO", resource)
 	return resource, nil
 }
 
