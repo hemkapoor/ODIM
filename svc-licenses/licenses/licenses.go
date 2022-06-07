@@ -250,7 +250,7 @@ func (e *ExternalInterface) InstallLicenseService(req *licenseproto.InstallLicen
 }
 
 func (e *ExternalInterface) getDetailsFromAggregate(aggregateURI string) ([]string, error) {
-	var resource map[string]interface{}
+	var resource model.Elements
 	var links []string
 	respData, err := e.DB.GetResource("Aggregate", aggregateURI, persistencemgr.OnDisk)
 	fmt.Println("ressssssssssssppp", respData)
@@ -265,10 +265,10 @@ func (e *ExternalInterface) getDetailsFromAggregate(aggregateURI string) ([]stri
 	}
 	fmt.Println("KKKKKKKKKKKKKKKKKAAAAA")
 	log.Info("System URL's from agrregate: ", resource)
-	elements := resource["Elements"].([]interface{})
-	fmt.Println("eeeeeeeeeeeeeeeeeeeeeeee", elements)
-	for _, key := range elements {
-		res, err := e.getManagerURL(key.(string))
+	//elements := resource["Elements"].([]interface{})
+	//fmt.Println("eeeeeeeeeeeeeeeeeeeeeeee", elements)
+	for _, key := range resource.Elements {
+		res, err := e.getManagerURL(key)
 		log.Info("linkkkkkkkkkkkkkkkkkkkk", res)
 		if err != nil {
 			errMsg := "Unable to get manager link"
@@ -282,7 +282,7 @@ func (e *ExternalInterface) getDetailsFromAggregate(aggregateURI string) ([]stri
 }
 
 func (e *ExternalInterface) getManagerURL(systemURI string) ([]string, error) {
-	var resource map[string]interface{}
+	var resource dmtf.ComputerSystem
 	var managerLink string
 	var links []string
 	respData, err := e.DB.GetResource("ComputerSystem", systemURI, persistencemgr.InMemory)
@@ -293,9 +293,9 @@ func (e *ExternalInterface) getManagerURL(systemURI string) ([]string, error) {
 	if jerr != nil {
 		return nil, jerr
 	}
-	members := resource["Links"].(map[string]interface{})["ManagedBy"]
-	for _, member := range members.([]interface{}) {
-		managerLink = member.(map[string]interface{})["@odata.id"].(string)
+	members := resource.Links.ManagedBy
+	for _, member := range members {
+		managerLink = member.Oid
 	}
 	links = append(links, managerLink)
 
