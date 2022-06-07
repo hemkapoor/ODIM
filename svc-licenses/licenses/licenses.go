@@ -242,7 +242,7 @@ func (e *ExternalInterface) InstallLicenseService(req *licenseproto.InstallLicen
 			log.Error(errMsg)
 			return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
 		}
-		log.Info("Install license response: ", getResponse)
+		log.Info("Install license response: ", getResponse.StatusCode)
 		log.Info("Install license response22: ", body)
 		//resp.StatusCode = http.StatusOK
 		//resp.StatusMessage = response.Success
