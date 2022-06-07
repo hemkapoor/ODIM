@@ -129,6 +129,25 @@ func mockGetResource(table, key string, dbtype persistencemgr.DbType) (string, *
 		}
 		]
 		}}`), nil
+	} else if key == "/redfish/v1/AggregationService/Aggregates/uuid" {
+		return string(`{"Elements":["/redfish/v1/Systems/uuid.1"]}`), nil
+	} else if key == "/redfish/v1/AggregationService/Aggregates/uuid2" {
+		return string(`{"Elements":["/redfish/v1/Systems/uuid.2"]}`), nil
+	} else if key == "/redfish/v1/Systems/uuid.2" {
+		return string(`{"Id": "uuid.1",
+		"IndicatorLED": "Off",
+		"Links":{
+		"Chassis":[
+		{
+		"@odata.id": "/redfish/v1/Chassis/uuid.2"
+		}
+		],
+		"ManagedBy":[
+		{
+		"@odata.id": "/redfish/v1/Managers/uuid.2"
+		}
+		]
+		}}`), nil
 	}
 	return "body", nil
 }

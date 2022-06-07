@@ -175,3 +175,20 @@ func TestInstallLicenseService_ManagerURL(t *testing.T) {
 
 	assert.Equal(t, http.StatusNoContent, int(response.StatusCode), "Status code should be StatusNoContent.")
 }
+
+func TestInstallLicenseService_Agrregates(t *testing.T) {
+	req := &licenseproto.InstallLicenseRequest{
+		RequestBody: []byte(`{
+			"LicenseString": "XYZ",
+			"Links": {
+				"AuthorizedDevices": [{
+					"@odata.id": "/redfish/v1/AggregationService/Aggregates/uuid",
+					"@odata.id": "/redfish/v1/AggregationService/Aggregates/uuid2"
+				}]
+			}
+		}`)}
+	e := mockGetExternalInterface()
+	response := e.InstallLicenseService(req)
+
+	assert.Equal(t, http.StatusNoContent, int(response.StatusCode), "Status code should be StatusNoContent.")
+}

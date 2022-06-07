@@ -17,6 +17,7 @@ package licenses
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -141,7 +142,7 @@ func (e *ExternalInterface) InstallLicenseService(req *licenseproto.InstallLicen
 		case strings.Contains(serverURI, "Systems"):
 			managerLink, err = e.getManagerURL(serverURI)
 			if err != nil {
-				errMsg := "Unable to get System resource"
+				errMsg := "Unable to get manager link"
 				log.Error(errMsg)
 				return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 			}
@@ -150,6 +151,17 @@ func (e *ExternalInterface) InstallLicenseService(req *licenseproto.InstallLicen
 			}
 		case strings.Contains(serverURI, "Managers"):
 			linksMap[serverURI] = true
+		case strings.Contains(serverURI, "Aggregates"):
+			fmt.Println("kkkkkkkkkkkkkkkkkk", serverURI)
+			managerLink, err = e.getDetailsFromAggregate(serverURI)
+			if err != nil {
+				errMsg := "Unable to get manager link from aggregates"
+				log.Error(errMsg)
+				return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+			}
+			for _, link := range managerLink {
+				linksMap[link] = true
+			}
 		default:
 			errMsg := "Invalid AuthorizedDevices links"
 			log.Error(errMsg)
@@ -235,6 +247,38 @@ func (e *ExternalInterface) InstallLicenseService(req *licenseproto.InstallLicen
 
 	resp.StatusCode = http.StatusNoContent
 	return resp
+}
+
+func (e *ExternalInterface) getDetailsFromAggregate(aggregateURI string) ([]string, error) {
+	var resource map[string]interface{}
+	var links []string
+	respData, err := e.DB.GetResource("Aggregate", aggregateURI, persistencemgr.OnDisk)
+	fmt.Println("ressssssssssssppp", respData)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("AAAAAAAAAAAAAAAAAA")
+	jerr := JsonUnMarshalFunc([]byte(respData), &resource)
+	fmt.Println("KKKKKKKKKKKKKKKKKAAAAA11111", resource)
+	if jerr != nil {
+		return nil, jerr
+	}
+	fmt.Println("KKKKKKKKKKKKKKKKKAAAAA")
+	log.Info("System URL's from agrregate: ", resource)
+	elements := resource["Elements"].([]interface{})
+	fmt.Println("eeeeeeeeeeeeeeeeeeeeeeee", elements)
+	for _, key := range elements {
+		res, err := e.getManagerURL(key.(string))
+		log.Info("linkkkkkkkkkkkkkkkkkkkk", res)
+		if err != nil {
+			errMsg := "Unable to get manager link"
+			log.Error(errMsg)
+			return nil, err
+		}
+		links = append(links, res...)
+	}
+	log.Info("manager links: ", links)
+	return links, nil
 }
 
 func (e *ExternalInterface) getManagerURL(systemURI string) ([]string, error) {
