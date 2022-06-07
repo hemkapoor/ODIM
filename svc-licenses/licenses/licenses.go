@@ -236,13 +236,21 @@ func (e *ExternalInterface) InstallLicenseService(req *licenseproto.InstallLicen
 		contactRequest.DeviceInfo = target
 		contactRequest.OID = "/ODIM/v1/LicenseService/Licenses"
 		contactRequest.PostBody = reqBody
-		_, _, getResponse, err := e.External.ContactPlugin(contactRequest, "error while installing license: ")
+		body, _, getResponse, err := e.External.ContactPlugin(contactRequest, "error while installing license: ")
 		if err != nil {
 			errMsg := err.Error()
 			log.Error(errMsg)
 			return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
 		}
 		log.Info("Install license response: ", getResponse)
+		log.Info("Install license response22: ", body)
+		//resp.StatusCode = http.StatusOK
+		//resp.StatusMessage = response.Success
+		err = JsonUnMarshalFunc(body, &resp.Body)
+		if err != nil {
+			return common.GeneralError(http.StatusInternalServerError, response.InternalError, err.Error(), nil, nil)
+		}
+		log.Info("LLLLLLLLLLLLLLLLLLLLLLLLLL", resp.Body)
 	}
 
 	resp.StatusCode = http.StatusNoContent

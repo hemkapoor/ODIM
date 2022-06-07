@@ -126,8 +126,10 @@ func ContactPlugin(req model.PluginContactRequest, errorMessage string) ([]byte,
 			return nil, "", resp, fmt.Errorf(errorMessage)
 		}
 	}
+	fmt.Println("{{{{{{{{{{{{{{{{{{{{{{}}}}}", pluginResponse.StatusCode)
 	defer pluginResponse.Body.Close()
 	body, err := ioutil.ReadAll(pluginResponse.Body)
+	fmt.Println("qqqqqqqqqqqqqqqqqqqqqqq", body)
 	if err != nil {
 		errorMessage := "error while trying to read response body: " + err.Error()
 		resp.StatusCode = http.StatusInternalServerError
