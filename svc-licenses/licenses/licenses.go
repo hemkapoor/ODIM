@@ -98,7 +98,7 @@ func (e *ExternalInterface) GetLicenseResource(req *licenseproto.GetLicenseResou
 	}
 
 	if data != "" {
-		err := json.Unmarshal([]byte(data), &licenseResp)
+		err := json.Unmarshal([]byte(data.(string)), &licenseResp)
 		if err != nil {
 			log.Error("Unable to unmarshall  the data: " + err.Error())
 			return common.GeneralError(http.StatusInternalServerError, response.InternalError, err.Error(), nil, nil)
@@ -258,7 +258,7 @@ func (e *ExternalInterface) getDetailsFromAggregate(aggregateURI string) ([]stri
 		return nil, err
 	}
 	fmt.Println("AAAAAAAAAAAAAAAAAA")
-	jerr := JsonUnMarshalFunc([]byte(respData), &resource)
+	jerr := JsonUnMarshalFunc([]byte(respData.(string)), &resource)
 	fmt.Println("KKKKKKKKKKKKKKKKKAAAAA11111", resource)
 	if jerr != nil {
 		return nil, jerr
@@ -289,7 +289,7 @@ func (e *ExternalInterface) getManagerURL(systemURI string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	jerr := JsonUnMarshalFunc([]byte(respData), &resource)
+	jerr := JsonUnMarshalFunc([]byte(respData.(string)), &resource)
 	if jerr != nil {
 		return nil, jerr
 	}
