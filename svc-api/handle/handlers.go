@@ -106,9 +106,6 @@ func getService(microServices []string, uuid string) models.ServiceRoot {
 		case "TelemetryService":
 			serviceRoot.TelemetryService = &models.Service{OdataID: servicePath}
 
-		case "CompositionService":
-			serviceRoot.CompositionService = &models.Service{OdataID: servicePath}
-
 		case "LicenseService":
 			serviceRoot.LicenseService = &models.Service{OdataID: servicePath}
 
@@ -247,12 +244,6 @@ func GetMetadata(ctx iris.Context) {
 			models.Reference{URI: "http://redfish.dmtf.org/schemas/v1/ChassisCollection_v1.xml",
 				TopInclude: []models.Include{
 					models.Include{Namespace: "ChassisCollection"},
-				},
-			},
-			models.Reference{URI: "http://redfish.dmtf.org/schemas/v1/CompositionService_v1.xml",
-				TopInclude: []models.Include{
-					models.Include{Namespace: "CompositionService"},
-					models.Include{Namespace: "CompositionService.v1_2_0"},
 				},
 			},
 			models.Reference{URI: "http://redfish.dmtf.org/schemas/v1/ComputerSystem_v1.xml",
@@ -1166,35 +1157,6 @@ func SystemsMethodInvalidURI(ctx iris.Context) {
 	}
 	common.SetResponseHeader(ctx, nil)
 	ctx.JSON(errArgs.CreateGenericErrorResponse())
-	return
-}
-
-// CompositionServiceMethodNotAllowed holds builds reponse for the unallowed http operation on Systems URLs and returns 405 error.
-func CompositionServiceMethodNotAllowed(ctx iris.Context) {
-	defer ctx.Next()
-	url := ctx.Request().URL
-	path := url.Path
-	resourceID := ctx.Params().Get("id")
-	// Extend switch case, when each path, requires different handling
-	switch path {
-	case "/redfish/v1/CompositionService/ResourceBlocks":
-		ctx.ResponseWriter().Header().Set("Allow", "GET, POST")
-	case "/redfish/v1/CompositionServie/ResourceBlocks/" + resourceID:
-		ctx.ResponseWriter().Header().Set("Allow", "GET, DELETE")
-	case "/redfish/v1/CompositionService/ResourceZones":
-		ctx.ResponseWriter().Header().Set("Allow", "GET, POST")
-	case "/redfish/v1/CompositionService/ResourceZones/" + resourceID:
-		ctx.ResponseWriter().Header().Set("Allow", "GET, DELETE")
-	default:
-		ctx.ResponseWriter().Header().Set("Allow", "GET")
-	}
-
-	// Set Allow header for search and filter queries
-	if strings.Contains(path, "?") {
-		ctx.ResponseWriter().Header().Set("Allow", "GET")
-	}
-
-	fillMethodNotAllowedErrorResponse(ctx)
 	return
 }
 
