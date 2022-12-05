@@ -1173,10 +1173,13 @@ def store_redis_password_in_vault(REDIS_PW_FILE_PATH, redis_db_name):
 	first_pw, second_pw = pw_from_prompt()
 	if first_pw != second_pw:
 		logger.critical("Passwords provided do not match")
+		del first_pw,second_pw
 		exit(1)
 
+	k= first_pw.encode('utf-8')
+	del first_pw
 	fd = open(REDIS_PW_FILE_PATH, "wb")
-	fd.write(first_pw.encode('utf-8'))
+	fd.write(k)
 	fd.close()
 
 	encrypt_cmd = '{vault_bin} -key {key_file} -encrypt {data_file}'.format(vault_bin=ODIMRA_VAULT_BIN,
