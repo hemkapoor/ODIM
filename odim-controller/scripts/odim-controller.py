@@ -19,6 +19,7 @@ import os, sys, subprocess, grp, time
 import glob, shutil, copy, getpass, socket
 
 import base64
+import bcrypt
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
@@ -1173,13 +1174,11 @@ def store_redis_password_in_vault(REDIS_PW_FILE_PATH, redis_db_name):
 	first_pw, second_pw = pw_from_prompt()
 	if first_pw != second_pw:
 		logger.critical("Passwords provided do not match")
-		del first_pw,second_pw
 		exit(1)
-    #first_pw.enc
-	k= first_pw.encode('utf-8')
-	del first_pw
+	password = first_pw.encode('utf-8')
+	hashedPassword = bcrypt.hashpw(password, bcrypt.gensalt())
 	fd = open(REDIS_PW_FILE_PATH, "wb")
-	fd.write(k)
+	fd.write(hashedPassword)
 	fd.close()
 
 	encrypt_cmd = '{vault_bin} -key {key_file} -encrypt {data_file}'.format(vault_bin=ODIMRA_VAULT_BIN,
@@ -1393,11 +1392,11 @@ def update_helm_charts(config_map_name):
 		"etcd":"upgrade_thirdparty"
 	}
 	if config_map_name =='composition-service':
-		logger.warning("upgrade is not supported for "+config_map_name)
+		logger.warning("upgrade is not supported")
 		exit(1)
 
 	if config_map_name not in optionHelmChartInfo:
-		logger.critical("upgrade is not supported for "+config_map_name)
+		logger.critical("upgrade is not supported")
 		exit(1)
 
 	helmCharatGroupName=optionHelmChartInfo[config_map_name]
@@ -1410,7 +1409,7 @@ def update_helm_charts(config_map_name):
 	helmchartData=GROUP_VAR_DATA[helmCharatGroupName]
 	fullHelmChartName = helmchartData[config_map_name]
 	if fullHelmChartName=='':
-		logger.critical("upgrade is not supported for "+config_map_name)
+		logger.critical("upgrade is not supported")
 		exit(1)
 
 	logger.info('Full helm chart name %s',fullHelmChartName)
@@ -1439,7 +1438,7 @@ def update_helm_charts(config_map_name):
 					nodes_list += '{hostname},'.format(hostname=node)
 				nodes_list = nodes_list.rstrip(',')
 				dockerImageName=GROUP_VAR_DATA['odim_docker_images'][config_map_name]
-				logger.info("Start copying of docker images for "+config_map_name)
+				logger.info("Start copying of docker images")
 				docker_copy_image_command= 'ansible-playbook -i {host_conf_file} --become --become-user=root \
 							   --extra-vars "docker_image_name={docker_image_name} helm_config_file={helm_config_file} host={nodes} ignore_err={ignore_err}" pre_upgrade.yaml'.format(\
 									   host_conf_file=host_file,docker_image_name=dockerImageName,\

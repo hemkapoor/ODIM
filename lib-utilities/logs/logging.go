@@ -38,8 +38,8 @@ func (l *Logging) AuditLog(ctx iris.Context, reqBody map[string]interface{}) {
 	respStatusCode := int32(ctx.GetStatusCode())
 	operationStatus := getResponseStatus(respStatusCode)
 
-	// 110 is for audit log info
-	// 107 is for audit log error
+	// 110 indicates info audit log for successful operation
+	// 107 indicates error audit log for failed operation
 	if operationStatus {
 		successMsg := "<110> " + logMsg + " Operation successful"
 		fmt.Println(successMsg)
@@ -117,9 +117,9 @@ func (l *Logging) auditLogEntry(ctx iris.Context, reqBody map[string]interface{}
 
 	// formatting logs in syslog format
 	if reqStr == "null" {
-		logMsg = fmt.Sprintf("%s %s [account@1 user=\"%s\" roleID=\"%s\"][request@1 method=\"%s\" resource=\"%s\"][response@1 responseCode=%d]", timeNow, host, sessionUserName, sessionRoleID, method, rawURI, respStatusCode)
+		logMsg = fmt.Sprintf("%s %s [account@1 user= %s roleID= %s][request@1 method= %s resource= %s][response@1 responseCode=%d]", timeNow, host, sessionUserName, sessionRoleID, method, rawURI, respStatusCode)
 	} else {
-		logMsg = fmt.Sprintf("%s %s [account@1 user=\"%s\" roleID=\"%s\"][request@1 method=\"%s\" resource=\"%s\" requestBody=\"%s\"][response@1 responseCode=%d]", timeNow, host, sessionUserName, sessionRoleID, method, rawURI, reqStr, respStatusCode)
+		logMsg = fmt.Sprintf("%s %s [account@1 user= %s roleID= %s][request@1 method= %s resource= %s requestBody= %s][response@1 responseCode=%d]", timeNow, host, sessionUserName, sessionRoleID, method, rawURI, reqStr, respStatusCode)
 	}
 	return logMsg
 }
