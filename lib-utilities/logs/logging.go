@@ -116,10 +116,10 @@ func (l *Logging) auditLogEntry(ctx iris.Context, reqBody map[string]interface{}
 	reqStr := MaskRequestBody(reqBody)
 
 	// formatting logs in syslog format
-	if reqStr == "null" {
-		logMsg = fmt.Sprintf("%s %s [account@1 user= %s roleID= %s][request@1 method= %s resource= %s][response@1 responseCode=%d]", timeNow, host, sessionUserName, sessionRoleID, method, rawURI, respStatusCode)
+	if reqStr == "" {
+		logMsg = fmt.Sprintf("%s %s [account@1 user=\"%s\" roleID=\"%s\"][request@1 method=\"%s\" resource=\"%s\"][response@1 responseCode=%d]", timeNow, host, sessionUserName, sessionRoleID, method, rawURI, respStatusCode)
 	} else {
-		logMsg = fmt.Sprintf("%s %s [account@1 user= %s roleID= %s][request@1 method= %s resource= %s requestBody= %s][response@1 responseCode=%d]", timeNow, host, sessionUserName, sessionRoleID, method, rawURI, reqStr, respStatusCode)
+		logMsg = fmt.Sprintf("%s %s [account@1 user=\"%s\" roleID=\"%s\"][request@1 method=\"%s\" resource=\"%s\" requestBody= %s][response@1 responseCode=%d]", timeNow, host, sessionUserName, sessionRoleID, method, rawURI, reqStr, respStatusCode)
 	}
 	return logMsg
 }
@@ -137,10 +137,7 @@ func MaskRequestBody(reqBody map[string]interface{}) string {
 		}
 	}
 	reqStr := string(jsonStr)
-	// adding null to requestbody property if no payload is sent
-	if reqStr == "" {
-		reqStr = "null"
-	}
+
 	return reqStr
 }
 
