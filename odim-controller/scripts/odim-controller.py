@@ -1175,7 +1175,7 @@ def store_redis_password_in_vault(REDIS_PW_FILE_PATH, redis_db_name):
 		logger.critical("Passwords provided do not match")
 		del first_pw,second_pw
 		exit(1)
-
+    #first_pw.enc
 	k= first_pw.encode('utf-8')
 	del first_pw
 	fd = open(REDIS_PW_FILE_PATH, "wb")
@@ -1236,7 +1236,7 @@ def get_password_from_vault(cur_dir, password_file_path):
 
 	if execHdlr.returncode != 0 or std_out == "":
 		print(std_out.strip())
-		logger.critical("failed to read the password from "+ password_file_path)
+		logger.critical("failed to read the password from file")
 		os.chdir(cur_dir)
 		exit(1)
 
