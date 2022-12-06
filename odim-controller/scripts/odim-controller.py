@@ -1154,9 +1154,9 @@ def store_password_in_vault():
 	if first_pw != second_pw:
 		logger.critical("Passwords provided do not match")
 		exit(1)
-
+	encoded_pswd = base64.b64encode(first_pw.encode('utf-8'))
 	fd = open(ANSIBLE_SUDO_PW_FILE, "wb")
-	fd.write(first_pw.encode('utf-8'))
+	fd.write(encoded_pswd)
 	fd.close()
 
 	encrypt_cmd = '{vault_bin} -key {key_file} -encrypt {data_file}'.format(vault_bin=ODIMRA_VAULT_BIN,
@@ -1175,10 +1175,9 @@ def store_redis_password_in_vault(REDIS_PW_FILE_PATH, redis_db_name):
 	if first_pw != second_pw:
 		logger.critical("Passwords provided do not match")
 		exit(1)
-	password = first_pw.encode('utf-8')
-	hashedPassword = bcrypt.hashpw(password, bcrypt.gensalt())
+	encoded_pswd = base64.b64encode(first_pw.encode('utf-8'))
 	fd = open(REDIS_PW_FILE_PATH, "wb")
-	fd.write(hashedPassword)
+	fd.write(encoded_pswd)
 	fd.close()
 
 	encrypt_cmd = '{vault_bin} -key {key_file} -encrypt {data_file}'.format(vault_bin=ODIMRA_VAULT_BIN,
@@ -1214,7 +1213,8 @@ def load_password_from_vault(cur_dir):
 		os.chdir(cur_dir)
 		exit(1)
 
-	ANSIBLE_BECOME_PASS = std_out.rstrip('\n')
+	pswd = base64.b64decode(std_out).decode('utf-8').rstrip('\n')
+	ANSIBLE_BECOME_PASS = pswd
 
 
 def get_password_from_vault(cur_dir, password_file_path):
@@ -1238,8 +1238,8 @@ def get_password_from_vault(cur_dir, password_file_path):
 		logger.critical("failed to read the password from file")
 		os.chdir(cur_dir)
 		exit(1)
-
-	return std_out.rstrip('\n')
+	pswd = base64.b64decode(std_out).decode('utf-8').rstrip('\n')
+	return pswd
 
 # check_extract_kubespray_src is used for invoking
 # a script, after checking and if not exists, to extract
