@@ -20,6 +20,7 @@ import glob, shutil, copy, getpass, socket
 
 import base64
 import bcrypt
+from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
@@ -1154,7 +1155,10 @@ def store_password_in_vault():
 	if first_pw != second_pw:
 		logger.critical("Passwords provided do not match")
 		exit(1)
-	encoded_pswd = base64.b64encode(first_pw.encode('utf-8'))
+	# encoded_pswd = base64.b64encode(first_pw.encode('utf-8'))
+	key = Fernet.generate_key()
+	fernet = Fernet(key)
+	encoded_pswd = fernet.encrypt(first_pw.encode('utf-8').encode())
 	fd = open(ANSIBLE_SUDO_PW_FILE, "wb")
 	fd.write(encoded_pswd)
 	fd.close()
@@ -1175,7 +1179,10 @@ def store_redis_password_in_vault(REDIS_PW_FILE_PATH, redis_db_name):
 	if first_pw != second_pw:
 		logger.critical("Passwords provided do not match")
 		exit(1)
-	encoded_pswd = base64.b64encode(first_pw.encode('utf-8'))
+	# encoded_pswd = base64.b64encode(first_pw.encode('utf-8'))
+	key = Fernet.generate_key()
+	fernet = Fernet(key)
+	encoded_pswd = fernet.encrypt(first_pw.encode('utf-8').encode())
 	fd = open(REDIS_PW_FILE_PATH, "wb")
 	fd.write(encoded_pswd)
 	fd.close()
